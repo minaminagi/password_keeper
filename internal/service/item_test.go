@@ -203,3 +203,41 @@ func TestItemServiceCreateReusesExistingTag(t *testing.T) {
 		t.Fatalf("ReplaceItemTags received %v, want [tag-work]", tagIDs)
 	}
 }
+
+func TestItemServiceGetByIDReturnsTagNames(t *testing.T) {
+	itemRepo := newMemoryItemRepo()
+	tagRepo := newMemoryTagRepo(
+		models.TagModel{ID: "tag-work", Name: "work"},
+		models.TagModel{ID: "tag-personal", Name: "personal"},
+	)
+	itemTagRepo := newMemoryItemTagRepo()
+	svc := newUnlockedItemService(itemRepo, tagRepo, itemTagRepo)
+
+	created, err := svc.Create(context.Background(), domain.CreateItemInput{
+		Title:    "GitHub",
+		Password: "secret",
+		Tags:     []string{"work", "personal"},
+	})
+	if err != nil {
+		t.Fatalf("Create returned error: %v", err)
+	}
+
+	item, err := svc.GetByID(context.Background(), created.ID)
+	if err != nil {
+		t.Fatalf("GetByID returned error: %v", err)
+	}
+
+	sort.Strings(item.Tags)
+	wantTags := []string{"personal", "work"}
+	if len(item.Tags) != len(wantTags) {
+		t.Fatalf("GetByID returned tags %v, want %v", item.Tags, wantTags)
+	}
+	for idx := range item.Tags {
+		if item.Tags[idx] != wantTags[idx] {
+			t.Fatalf("GetByID returned tags %v, want %v", item.Tags, wantTags)
+		}
+	}
+	if item.Password != "secret" {
+		t.Fatalf("GetByID returned password %q, want original password", item.Password)
+	}
+}

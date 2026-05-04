@@ -12,6 +12,10 @@
     --glow: rgba(20, 184, 166, 0.24);
 }
 
+html {
+    scrollbar-gutter: stable;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -20,6 +24,7 @@ body {
     margin: 0;
     min-width: 320px;
     min-height: 100vh;
+    overflow-y: scroll;
     background:
         radial-gradient(circle at 12% 12%, rgba(20, 184, 166, 0.22), transparent 34%),
         radial-gradient(circle at 88% 8%, rgba(15, 118, 110, 0.18), transparent 30%),
@@ -167,6 +172,7 @@ textarea {
 
 .vault-screen {
     padding: 28px;
+    overflow-x: hidden;
 }
 
 .vault-header {
@@ -182,19 +188,26 @@ textarea {
     padding: 22px;
     border-radius: 26px;
     box-shadow: 0 18px 50px rgba(12, 51, 44, 0.09);
+    min-width: 0;
 }
 
 .metric-card.accent {
     background: linear-gradient(135deg, rgba(240, 253, 250, 0.92), rgba(204, 251, 241, 0.66));
 }
 
+.vault-metrics {
+    width: min(1500px, 100%);
+    margin-inline: auto;
+}
+
 .vault-grid {
     width: min(1500px, 100%);
     margin: 0 auto;
     display: grid;
-    grid-template-columns: minmax(310px, 0.78fr) minmax(360px, 1fr) minmax(360px, 0.95fr);
+    grid-template-columns: minmax(0, 0.78fr) minmax(0, 1fr) minmax(0, 0.95fr);
     gap: 18px;
     align-items: start;
+    min-width: 0;
 }
 
 .composer-card,
@@ -203,6 +216,8 @@ textarea {
     padding: 22px;
     border-radius: 30px;
     box-shadow: 0 18px 60px rgba(12, 51, 44, 0.1);
+    min-width: 0;
+    overflow: hidden;
 }
 
 .item-card {
@@ -238,9 +253,48 @@ textarea {
     border-radius: 22px;
     border: 1px solid var(--line);
     background: rgba(255, 255, 255, 0.62);
+    min-width: 0;
+    overflow: hidden;
+}
+
+.password-row {
+    display: grid !important;
+    grid-template-columns: 128px 34px;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-width: 0;
+}
+
+.password-row .mantine-ActionIcon-root {
+    justify-self: end;
+}
+
+.password-mask,
+.password-plain {
+    display: block;
+    width: 128px;
+    min-width: 128px;
+    max-width: 128px;
+    font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.password-plain {
+    letter-spacing: 0;
 }
 
 .vault-error {
+    width: min(1500px, 100%);
+    margin: 0 auto 18px;
+}
+
+.vault-view-switcher {
+    display: none;
     width: min(1500px, 100%);
     margin: 0 auto 18px;
 }
@@ -287,12 +341,36 @@ textarea {
 }
 
 @media (max-width: 1180px) {
-    .vault-grid {
-        grid-template-columns: 1fr 1fr;
+    .vault-header,
+    .vault-metrics,
+    .vault-view-switcher,
+    .vault-grid,
+    .vault-error {
+        width: min(454px, calc(100vw - 36px));
     }
 
+    .vault-view-switcher {
+        display: flex;
+    }
+
+    .vault-grid {
+        grid-template-columns: 1fr;
+        justify-items: stretch;
+    }
+
+    .vault-panel {
+        display: none;
+        width: 100%;
+    }
+
+    .vault-panel.active {
+        display: block;
+    }
+
+    .composer-card,
+    .list-card,
     .detail-card {
-        grid-column: 1 / -1;
+        width: 100%;
     }
 }
 

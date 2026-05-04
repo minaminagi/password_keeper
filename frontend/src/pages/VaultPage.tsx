@@ -25,10 +25,13 @@ import {
     IconBrandChrome,
     IconCategory,
     IconDatabase,
+    IconEye,
+    IconEyeOff,
     IconKey,
     IconLock,
     IconLogout,
     IconNotes,
+    IconPencil,
     IconPlus,
     IconRefresh,
     IconSearch,
@@ -36,6 +39,7 @@ import {
     IconStar,
     IconTrash,
     IconUser,
+    IconX,
 } from "@tabler/icons-react";
 import { ErrorNotice } from "../components/ErrorNotice";
 import { api, type CreateItemPayload } from "../services/api";
@@ -59,6 +63,8 @@ type Props = {
     onLocked: () => void;
 };
 
+type VaultView = "form" | "list" | "detail";
+
 const emptyItem: CreateItemPayload = {
     title: "",
     username: "",
@@ -77,6 +83,8 @@ const categoryOptions = [
     { value: "dev", label: "开发" },
     { value: "other", label: "其他" },
 ];
+
+const maskedPassword = "••••••";
 
 function parseTags(value: string) {
     return value
@@ -103,11 +111,16 @@ export function VaultPage({ onLocked }: Props) {
     const [error, setError] = useState<AppError | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [revealedPasswordId, setRevealedPasswordId] = useState("");
+    const [editingId, setEditingId] = useState("");
+    const [activeView, setActiveView] = useState<VaultView>("list");
 
     const selectedItem =
         items.find((item) => item.id === selectedId) ?? items[0] ?? null;
     const favoriteCount = items.filter((item) => item.favorite).length;
     const tagCount = new Set(items.flatMap((item) => item.tags)).size;
+    const passwordVisible =
+        selectedItem?.id !== undefined && selectedItem.id === revealedPasswordId;
 
     async function refresh() {
         setLoading(true);
@@ -128,6 +141,12 @@ export function VaultPage({ onLocked }: Props) {
             if (nextItems.length === 0) {
                 setSelectedId("");
             }
+            if (
+                revealedPasswordId &&
+                !nextItems.some((item) => item.id === revealedPasswordId)
+            ) {
+                setRevealedPasswordId("");
+            }
         } catch (err) {
             setError(toAppError(err, "刷新条目失败"));
         } finally {
@@ -139,22 +158,58 @@ export function VaultPage({ onLocked }: Props) {
         refresh();
     }, []);
 
-    async function handleCreate(event: React.FormEvent) {
+    function resetForm() {
+        setForm(emptyItem);
+        setTagsInput("");
+        setEditingId("");
+    }
+
+    function beginEdit(item: Item) {
+        setForm({
+            title: item.title,
+            username: item.username,
+            password: item.password,
+            website: item.website,
+            notes: item.notes,
+            category: item.category || "login",
+            favorite: item.favorite,
+            tags: item.tags,
+        });
+        setTagsInput(item.tags.join(", "));
+        setEditingId(item.id);
+        setRevealedPasswordId("");
+        setActiveView("form");
+    }
+
+    async function handleSave(event: React.FormEvent) {
         event.preventDefault();
         setSubmitting(true);
         setError(null);
 
         try {
-            const created = await api.createItem({
+            const payload = {
                 ...form,
                 tags: parseTags(tagsInput),
-            });
-            setForm(emptyItem);
-            setTagsInput("");
-            await refresh();
-            setSelectedId(created.id);
+            };
+
+            if (editingId) {
+                const updated = await api.updateItem({
+                    id: editingId,
+                    ...payload,
+                });
+                resetForm();
+                await refresh();
+                setSelectedId(updated.id);
+                setActiveView("detail");
+            } else {
+                const created = await api.createItem(payload);
+                resetForm();
+                await refresh();
+                setSelectedId(created.id);
+                setActiveView("detail");
+            }
         } catch (err) {
-            setError(toAppError(err, "保存条目失败"));
+            setError(toAppError(err, editingId ? "更新条目失败" : "保存条目失败"));
         } finally {
             setSubmitting(false);
         }
@@ -165,6 +220,7 @@ export function VaultPage({ onLocked }: Props) {
         try {
             await api.deleteItem(id);
             await refresh();
+            setActiveView("list");
         } catch (err) {
             setError(toAppError(err, "删除条目失败"));
         }
@@ -209,7 +265,12 @@ export function VaultPage({ onLocked }: Props) {
                 </Group>
             </header>
 
-            <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="lg" mb="lg">
+            <SimpleGrid
+                className="vault-metrics"
+                cols={{ base: 1, sm: 3 }}
+                spacing="lg"
+                mb="lg"
+            >
                 <Paper className="metric-card">
                     <Text size="sm" c="dimmed">
                         总条目
@@ -236,16 +297,49 @@ export function VaultPage({ onLocked }: Props) {
                 </div>
             )}
 
+            <SegmentedControl
+                className="vault-view-switcher"
+                value={activeView}
+                onChange={(value) => setActiveView(value as VaultView)}
+                data={[
+                    { value: "form", label: editingId ? "编辑" : "新增" },
+                    { value: "list", label: "列表" },
+                    { value: "detail", label: "详情" },
+                ]}
+            />
+
             <section className="vault-grid">
-                <Paper className="composer-card" shadow="md">
-                    <form onSubmit={handleCreate}>
+                <Paper
+                    className={
+                        activeView === "form"
+                            ? "composer-card vault-panel active"
+                            : "composer-card vault-panel"
+                    }
+                    shadow="md"
+                >
+                    <form onSubmit={handleSave}>
                         <Stack gap="md">
-                            <div>
-                                <Text c="teal" fw={700} size="sm">
-                                    新增条目
-                                </Text>
-                                <Title order={3}>保存一个账号</Title>
-                            </div>
+                            <Group justify="space-between" align="flex-start">
+                                <div>
+                                    <Text c="teal" fw={700} size="sm">
+                                        {editingId ? "编辑条目" : "新增条目"}
+                                    </Text>
+                                    <Title order={3}>
+                                        {editingId ? "更新这个账号" : "保存一个账号"}
+                                    </Title>
+                                </div>
+                                {editingId && (
+                                    <Tooltip label="取消编辑">
+                                        <ActionIcon
+                                            color="gray"
+                                            variant="light"
+                                            onClick={resetForm}
+                                        >
+                                            <IconX size={18} />
+                                        </ActionIcon>
+                                    </Tooltip>
+                                )}
+                            </Group>
 
                             <TextInput
                                 label="标题"
@@ -344,16 +438,29 @@ export function VaultPage({ onLocked }: Props) {
                                 type="submit"
                                 loading={submitting}
                                 disabled={!form.title}
-                                leftSection={<IconPlus size={18} />}
+                                leftSection={
+                                    editingId ? (
+                                        <IconPencil size={18} />
+                                    ) : (
+                                        <IconPlus size={18} />
+                                    )
+                                }
                                 size="md"
                             >
-                                保存条目
+                                {editingId ? "更新条目" : "保存条目"}
                             </Button>
                         </Stack>
                     </form>
                 </Paper>
 
-                <Paper className="list-card" shadow="md">
+                <Paper
+                    className={
+                        activeView === "list"
+                            ? "list-card vault-panel active"
+                            : "list-card vault-panel"
+                    }
+                    shadow="md"
+                >
                     <Stack gap="md">
                         <Group justify="space-between">
                             <div>
@@ -433,9 +540,10 @@ export function VaultPage({ onLocked }: Props) {
                                                     ? "item-card active"
                                                     : "item-card"
                                             }
-                                            onClick={() =>
-                                                setSelectedId(item.id)
-                                            }
+                                            onClick={() => {
+                                                setSelectedId(item.id);
+                                                setActiveView("detail");
+                                            }}
                                             withBorder
                                         >
                                             <Group justify="space-between">
@@ -468,7 +576,14 @@ export function VaultPage({ onLocked }: Props) {
                     </Stack>
                 </Paper>
 
-                <Paper className="detail-card" shadow="md">
+                <Paper
+                    className={
+                        activeView === "detail"
+                            ? "detail-card vault-panel active"
+                            : "detail-card vault-panel"
+                    }
+                    shadow="md"
+                >
                     {selectedItem ? (
                         <Stack gap="md">
                             <Group justify="space-between" align="flex-start">
@@ -481,21 +596,33 @@ export function VaultPage({ onLocked }: Props) {
                                         更新于 {formatDate(selectedItem.updated_at)}
                                     </Text>
                                 </div>
-                                <Tooltip label="删除条目">
-                                    <ActionIcon
-                                        color="red"
-                                        variant="light"
-                                        size="lg"
-                                        onClick={() =>
-                                            handleDelete(selectedItem.id)
-                                        }
-                                    >
-                                        <IconTrash size={18} />
-                                    </ActionIcon>
-                                </Tooltip>
+                                <Group gap="xs">
+                                    <Tooltip label="编辑条目">
+                                        <ActionIcon
+                                            color="teal"
+                                            variant="light"
+                                            size="lg"
+                                            onClick={() => beginEdit(selectedItem)}
+                                        >
+                                            <IconPencil size={18} />
+                                        </ActionIcon>
+                                    </Tooltip>
+                                    <Tooltip label="删除条目">
+                                        <ActionIcon
+                                            color="red"
+                                            variant="light"
+                                            size="lg"
+                                            onClick={() =>
+                                                handleDelete(selectedItem.id)
+                                            }
+                                        >
+                                            <IconTrash size={18} />
+                                        </ActionIcon>
+                                    </Tooltip>
+                                </Group>
                             </Group>
 
-                            <SimpleGrid cols={2}>
+                            <Stack gap="md">
                                 <Paper className="secret-field">
                                     <Text size="xs" c="dimmed" tt="uppercase">
                                         用户名
@@ -508,13 +635,51 @@ export function VaultPage({ onLocked }: Props) {
                                     <Text size="xs" c="dimmed" tt="uppercase">
                                         密码
                                     </Text>
-                                    <Text fw={700}>
-                                        {selectedItem.password
-                                            ? "••••••••••••"
-                                            : "-"}
-                                    </Text>
+                                    <Group className="password-row" gap="xs">
+                                        <Text
+                                            className={
+                                                passwordVisible
+                                                    ? "password-plain"
+                                                    : "password-mask"
+                                            }
+                                            fw={700}
+                                        >
+                                            {selectedItem.password
+                                                ? passwordVisible
+                                                    ? selectedItem.password
+                                                    : maskedPassword
+                                                : "-"}
+                                        </Text>
+                                        {selectedItem.password && (
+                                            <Tooltip
+                                                label={
+                                                    passwordVisible
+                                                        ? "隐藏原始密码"
+                                                        : "显示原始密码"
+                                                }
+                                            >
+                                                <ActionIcon
+                                                    color="teal"
+                                                    variant="light"
+                                                    onClick={() =>
+                                                        setRevealedPasswordId(
+                                                            passwordVisible
+                                                                ? ""
+                                                                : selectedItem.id,
+                                                        )
+                                                    }
+                                                >
+                                                    {passwordVisible ? (
+                                                        <IconEyeOff size={18} />
+                                                    ) : (
+                                                        <IconEye size={18} />
+                                                    )}
+                                                </ActionIcon>
+                                            </Tooltip>
+                                        )}
+                                    </Group>
                                 </Paper>
-                            </SimpleGrid>
+                            </Stack>
 
                             <Paper className="secret-field">
                                 <Text size="xs" c="dimmed" tt="uppercase">

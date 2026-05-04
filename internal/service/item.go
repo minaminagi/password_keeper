@@ -195,6 +195,10 @@ func (s *itemService) decryptItem(ctx context.Context, item models.ItemModel, ma
 	if err != nil {
 		return domain.Item{}, err
 	}
+	tagNames, err := s.tagNamesByIDs(ctx, tagIDs)
+	if err != nil {
+		return domain.Item{}, err
+	}
 
 	return domain.Item{
 		ID:        item.ID,
@@ -205,10 +209,36 @@ func (s *itemService) decryptItem(ctx context.Context, item models.ItemModel, ma
 		Notes:     string(notes),
 		Category:  item.Category,
 		Favorite:  item.Favorite,
-		Tags:      tagIDs,
+		Tags:      tagNames,
 		CreatedAt: item.CreatedAt,
 		UpdatedAt: item.UpdatedAt,
 	}, nil
+}
+
+func (s *itemService) tagNamesByIDs(ctx context.Context, ids []string) ([]string, error) {
+	if len(ids) == 0 {
+		return []string{}, nil
+	}
+
+	tags, err := s.tagRepo.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	namesByID := make(map[string]string, len(tags))
+	for _, tag := range tags {
+		namesByID[tag.ID] = tag.Name
+	}
+
+	names := make([]string, 0, len(ids))
+	for _, id := range ids {
+		name, ok := namesByID[id]
+		if !ok {
+			continue
+		}
+		names = append(names, name)
+	}
+	return names, nil
 }
 
 func (s *itemService) GetByID(ctx context.Context, id string) (domain.Item, error) {

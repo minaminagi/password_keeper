@@ -1,56 +1,77 @@
-import { useState, useEffect } from 'react'
-import {Events, WML} from "@wailsio/runtime";
-import {GreetService} from "../bindings/changeme";
+import { useEffect, useState } from "react";
+import {
+    Center,
+    Loader,
+    Paper,
+    Stack,
+    Text,
+    ThemeIcon,
+    Title,
+} from "@mantine/core";
+import { IconShieldLock } from "@tabler/icons-react";
+import { api } from "./services/api";
+import { SetupVaultPage } from "./pages/SetupVaultPage";
+import { UnlockPage } from "./pages/UnlockPage";
+import { VaultPage } from "./pages/VaultPage";
+import { toAppError, type AppError } from "./utils/errors";
+
+type AppStage = "loading" | "setup" | "unlock" | "vault";
 
 function App() {
-  const [name, setName] = useState<string>('');
-  const [result, setResult] = useState<string>('Please enter your name below 👇');
-  const [time, setTime] = useState<string>('Listening for Time event...');
+    const [stage, setStage] = useState<AppStage>("loading");
+    const [error, setError] = useState<AppError | null>(null);
 
-  const doGreet = () => {
-    let localName = name;
-    if (!localName) {
-      localName = 'anonymous';
+    useEffect(() => {
+        let alive = true;
+
+        api.isVaultInitialized()
+            .then((initialized) => {
+                if (!alive) return;
+                setStage(initialized ? "unlock" : "setup");
+            })
+            .catch((err) => {
+                if (!alive) return;
+                setError(toAppError(err, "读取保险库状态失败"));
+                setStage("setup");
+            });
+
+        return () => {
+            alive = false;
+        };
+    }, []);
+
+    if (stage === "loading") {
+        return (
+            <main className="auth-screen">
+                <Center mih="100vh">
+                    <Paper className="loading-card" shadow="xl">
+                        <Stack align="center" gap="md">
+                            <ThemeIcon size={58} radius={20} variant="gradient">
+                                <IconShieldLock size={30} />
+                            </ThemeIcon>
+                            <Title order={2}>Password Keeper</Title>
+                            <Text c="dimmed">正在检查本地保险库状态</Text>
+                            <Loader color="teal" type="bars" />
+                        </Stack>
+                    </Paper>
+                </Center>
+            </main>
+        );
     }
-    GreetService.Greet(localName).then((resultValue: string) => {
-      setResult(resultValue);
-    }).catch((err: any) => {
-      console.log(err);
-    });
-  }
 
-  useEffect(() => {
-    Events.On('time', (timeValue: any) => {
-      setTime(timeValue.data);
-    });
-    // Reload WML so it picks up the wml tags
-    WML.Reload();
-  }, []);
+    if (stage === "setup") {
+        return (
+            <SetupVaultPage error={error} onCreated={() => setStage("vault")} />
+        );
+    }
 
-  return (
-    <div className="container">
-      <div>
-        <a data-wml-openURL="https://wails.io">
-          <img src="/wails.png" className="logo" alt="Wails logo"/>
-        </a>
-        <a data-wml-openURL="https://reactjs.org">
-          <img src="/react.svg" className="logo react" alt="React logo"/>
-        </a>
-      </div>
-      <h1>Wails + React</h1>
-      <div className="result">{result}</div>
-      <div className="card">
-        <div className="input-box">
-          <input className="input" value={name} onChange={(e) => setName(e.target.value)} type="text" autoComplete="off"/>
-          <button className="btn" onClick={doGreet}>Greet</button>
-        </div>
-      </div>
-      <div className="footer">
-        <div><p>Click on the Wails logo to learn more</p></div>
-        <div><p>{time}</p></div>
-      </div>
-    </div>
-  )
+    if (stage === "unlock") {
+        return (
+            <UnlockPage error={error} onUnlocked={() => setStage("vault")} />
+        );
+    }
+
+    return <VaultPage onLocked={() => setStage("unlock")} />;
 }
 
-export default App
+export default App;

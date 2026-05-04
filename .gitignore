@@ -1,6 +1,66 @@
-.task
-bin
-frontend/dist
-frontend/node_modules
-build/linux/appimage/build
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Local agent / task state
+.codex
+.codex/
+.task/
+
+# Environment and local config
+.env
+.env.*
+!.env.example
+config.local.toml
+config.toml
+*.local.toml
+
+# Local application data
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+password.db
+
+# Logs and runtime dumps
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage/
+*.prof
+*.test
+
+# Go build outputs
+bin/
+dist/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Frontend dependencies and build outputs
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.cache/
+
+# Wails generated package/build artifacts
+build/bin/
+build/linux/appimage/build/
+build/linux/appimage/*.AppImage
+build/linux/*.desktop
 build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
+build/windows/nsis/*.exe
+build/windows/nsis/*.zip
+build/darwin/*.app/
+
+# Local course notes generated during this learning session
+PROJECT_NOTES.md
+class/

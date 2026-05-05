@@ -30,7 +30,7 @@ type Props = {
     onUnlocked: () => void;
 };
 
-type UnlockMode = "password" | "recovery" | "reset";
+type UnlockMode = "password" | "reset";
 
 export function UnlockPage({ error, onUnlocked }: Props) {
     const [masterPassword, setMasterPassword] = useState("");
@@ -64,11 +64,7 @@ export function UnlockPage({ error, onUnlocked }: Props) {
                 setNewRecoveryCode(meta.recovery_code);
                 return;
             }
-            if (unlockMode === "recovery") {
-                await api.recoverVault(recoveryCode);
-            } else {
-                await api.unlockVault(masterPassword);
-            }
+            await api.unlockVault(masterPassword);
             onUnlocked();
         } catch (err) {
             setLocalError(
@@ -76,8 +72,6 @@ export function UnlockPage({ error, onUnlocked }: Props) {
                     err,
                     unlockMode === "reset"
                         ? "重置主密码失败"
-                        : unlockMode === "recovery"
-                        ? "恢复码解锁失败"
                         : "解锁保险库失败",
                 ),
             );
@@ -134,7 +128,6 @@ export function UnlockPage({ error, onUnlocked }: Props) {
                                 }}
                                 data={[
                                     { value: "password", label: "主密码" },
-                                    { value: "recovery", label: "恢复码" },
                                     { value: "reset", label: "重置密码" },
                                 ]}
                             />
@@ -149,7 +142,7 @@ export function UnlockPage({ error, onUnlocked }: Props) {
                                         {newRecoveryCode}
                                     </Code>
                                 </Stack>
-                            ) : unlockMode === "recovery" || unlockMode === "reset" ? (
+                            ) : unlockMode === "reset" ? (
                                 <Stack gap="md">
                                     <TextInput
                                         label="恢复码"
@@ -163,34 +156,30 @@ export function UnlockPage({ error, onUnlocked }: Props) {
                                         placeholder="输入初始化时保存的恢复码"
                                         size="md"
                                     />
-                                    {unlockMode === "reset" && (
-                                        <>
-                                            <PasswordInput
-                                                label="新主密码"
-                                                leftSection={<IconKey size={18} />}
-                                                value={newMasterPassword}
-                                                onChange={(event) =>
-                                                    setNewMasterPassword(
-                                                        event.currentTarget.value,
-                                                    )
-                                                }
-                                                placeholder="输入新的主密码"
-                                                size="md"
-                                            />
-                                            <PasswordInput
-                                                label="确认新主密码"
-                                                leftSection={<IconKey size={18} />}
-                                                value={confirmMasterPassword}
-                                                onChange={(event) =>
-                                                    setConfirmMasterPassword(
-                                                        event.currentTarget.value,
-                                                    )
-                                                }
-                                                placeholder="再次输入新的主密码"
-                                                size="md"
-                                            />
-                                        </>
-                                    )}
+                                    <PasswordInput
+                                        label="新主密码"
+                                        leftSection={<IconKey size={18} />}
+                                        value={newMasterPassword}
+                                        onChange={(event) =>
+                                            setNewMasterPassword(
+                                                event.currentTarget.value,
+                                            )
+                                        }
+                                        placeholder="输入新的主密码"
+                                        size="md"
+                                    />
+                                    <PasswordInput
+                                        label="确认新主密码"
+                                        leftSection={<IconKey size={18} />}
+                                        value={confirmMasterPassword}
+                                        onChange={(event) =>
+                                            setConfirmMasterPassword(
+                                                event.currentTarget.value,
+                                            )
+                                        }
+                                        placeholder="再次输入新的主密码"
+                                        size="md"
+                                    />
                                 </Stack>
                             ) : (
                                 <PasswordInput
@@ -224,9 +213,7 @@ export function UnlockPage({ error, onUnlocked }: Props) {
                                           ? !recoveryCode ||
                                             !newMasterPassword ||
                                             !confirmMasterPassword
-                                          : unlockMode === "recovery"
-                                            ? !recoveryCode
-                                            : !masterPassword
+                                          : !masterPassword
                                 }
                                 size="md"
                                 fullWidth
@@ -244,8 +231,6 @@ export function UnlockPage({ error, onUnlocked }: Props) {
                                     ? "我已保存新恢复码，进入保险库"
                                     : unlockMode === "reset"
                                     ? "用恢复码重置主密码"
-                                    : unlockMode === "recovery"
-                                    ? "用恢复码解锁"
                                     : "解锁"}
                             </Button>
                         </Stack>

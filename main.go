@@ -2,8 +2,8 @@ package main
 
 import (
 	"embed"
+	"flag"
 	"log"
-	"os"
 
 	"passwordkeeper/internal/config"
 	"passwordkeeper/internal/crypto"
@@ -11,30 +11,22 @@ import (
 	"passwordkeeper/internal/service"
 	"passwordkeeper/internal/transport"
 
-	"github.com/BurntSushi/toml"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
 
-type Config struct {
-	DBPath string
-}
-
-var dbConfig Config
-
 func main() {
-	data, err := os.ReadFile("./config.toml")
+	configPath := flag.String("config", "", "path to config.toml")
+	flag.Parse()
+
+	appConfig, err := config.LoadAppConfig(*configPath)
 	if err != nil {
-		log.Fatal(err.Error())
-	}
-	_, err = toml.Decode(string(data), &dbConfig)
-	if err != nil {
-		log.Fatal(err.Error())
+		log.Fatal(err)
 	}
 
-	db, err := config.SQLiteService(dbConfig.DBPath)
+	db, err := config.SQLiteService(appConfig.DBPath)
 	if err != nil {
 		log.Fatal(err)
 	}

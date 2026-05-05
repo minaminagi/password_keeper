@@ -241,3 +241,38 @@ func TestItemServiceGetByIDReturnsTagNames(t *testing.T) {
 		t.Fatalf("GetByID returned password %q, want original password", item.Password)
 	}
 }
+
+func TestItemServiceGetListFiltersByTagName(t *testing.T) {
+	itemRepo := newMemoryItemRepo()
+	tagRepo := newMemoryTagRepo(models.TagModel{ID: "tag-email", Name: "email"})
+	itemTagRepo := newMemoryItemTagRepo()
+	svc := newUnlockedItemService(itemRepo, tagRepo, itemTagRepo)
+
+	created, err := svc.Create(context.Background(), domain.CreateItemInput{
+		Title:    "Mail",
+		Username: "alice",
+		Password: "secret",
+		Website:  "example.com",
+		Category: "login",
+		Tags:     []string{"email"},
+	})
+	if err != nil {
+		t.Fatalf("Create returned error: %v", err)
+	}
+
+	items, err := svc.GetList(context.Background(), domain.ListItemsFilter{Tag: "email"})
+	if err != nil {
+		t.Fatalf("GetList returned error: %v", err)
+	}
+	if len(items) != 1 || items[0].ID != created.ID {
+		t.Fatalf("GetList returned %#v, want created item", items)
+	}
+
+	items, err = svc.GetList(context.Background(), domain.ListItemsFilter{Tag: "missing"})
+	if err != nil {
+		t.Fatalf("GetList missing tag returned error: %v", err)
+	}
+	if len(items) != 0 {
+		t.Fatalf("GetList missing tag returned %d items, want 0", len(items))
+	}
+}

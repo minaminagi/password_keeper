@@ -101,6 +101,13 @@ function formatDate(value: string) {
     return date.toLocaleString();
 }
 
+function parseSearch(value: string) {
+    const tagMatch = value.match(/(?:^|\s)#\+(\S+)/);
+    const tag = tagMatch?.[1] ?? "";
+    const keyword = tagMatch ? value.replace(tagMatch[0], " ").trim() : value;
+    return { keyword, tag };
+}
+
 export function VaultPage({ onLocked }: Props) {
     const [items, setItems] = useState<Item[]>([]);
     const [selectedId, setSelectedId] = useState<string>("");
@@ -129,12 +136,14 @@ export function VaultPage({ onLocked }: Props) {
     const passwordVisible =
         selectedItem?.id !== undefined && selectedItem.id === revealedPasswordId;
 
-    async function refresh() {
+    async function refresh(overrides: Partial<{ keyword: string }> = {}) {
         setLoading(true);
         setError(null);
         try {
+            const search = parseSearch(overrides.keyword ?? keyword);
             const nextItems = await api.listItems({
-                keyword,
+                keyword: search.keyword,
+                tag: search.tag,
                 category: category ?? "",
                 favorite: favoriteFilter === "favorite" ? true : null,
             });
@@ -186,6 +195,13 @@ export function VaultPage({ onLocked }: Props) {
         setEditingId(item.id);
         setRevealedPasswordId("");
         setActiveView("form");
+    }
+
+    async function applyTagFilter(tag: string) {
+        const nextKeyword = `#+${tag}`;
+        setKeyword(nextKeyword);
+        setActiveView("list");
+        await refresh({ keyword: nextKeyword });
     }
 
     async function handleSave(event: React.FormEvent) {
@@ -298,7 +314,7 @@ export function VaultPage({ onLocked }: Props) {
                         variant="light"
                         leftSection={<IconRefresh size={18} />}
                         loading={loading}
-                        onClick={refresh}
+                        onClick={() => refresh()}
                     >
                         刷新
                     </Button>
@@ -618,7 +634,7 @@ export function VaultPage({ onLocked }: Props) {
                         </Group>
 
                         <TextInput
-                            placeholder="搜索标题"
+                            placeholder="搜索标题，或输入 #+标签名"
                             leftSection={<IconSearch size={18} />}
                             value={keyword}
                             onChange={(event) =>
@@ -651,7 +667,7 @@ export function VaultPage({ onLocked }: Props) {
                         </Group>
                         <Button
                             variant="light"
-                            onClick={refresh}
+                            onClick={() => refresh()}
                             loading={loading}
                             leftSection={<IconSearch size={18} />}
                         >
@@ -708,6 +724,23 @@ export function VaultPage({ onLocked }: Props) {
                                                         {item.username ||
                                                             "未填写用户名"}
                                                     </Text>
+                                                    {item.tags.length > 0 && (
+                                                        <Group gap={6} mt={8}>
+                                                            {item.tags.map((tag) => (
+                                                                <Badge
+                                                                    key={tag}
+                                                                    variant="light"
+                                                                    className="tag-filter-badge"
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
+                                                                        applyTagFilter(tag);
+                                                                    }}
+                                                                >
+                                                                    #{tag}
+                                                                </Badge>
+                                                            ))}
+                                                        </Group>
+                                                    )}
                                                 </div>
                                                 <Badge variant="light">
                                                     {item.category || "other"}
@@ -855,8 +888,9 @@ export function VaultPage({ onLocked }: Props) {
                                 ) : (
                                     selectedItem.tags.map((tag) => (
                                         <Badge
-                                            className="copyable-text"
+                                            className="copyable-text tag-filter-badge"
                                             key={tag}
+                                            onClick={() => applyTagFilter(tag)}
                                             variant="light"
                                         >
                                             #{tag}

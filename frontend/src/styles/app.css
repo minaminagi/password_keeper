@@ -190,6 +190,18 @@ textarea {
     word-break: break-word;
 }
 
+.tag-filter-badge {
+    cursor: pointer;
+    transition:
+        transform 140ms ease,
+        box-shadow 140ms ease;
+}
+
+.tag-filter-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(13, 148, 136, 0.14);
+}
+
 .vault-screen {
     padding: 28px;
     overflow-x: hidden;

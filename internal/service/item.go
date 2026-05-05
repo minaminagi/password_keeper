@@ -261,9 +261,21 @@ func (s *itemService) GetList(ctx context.Context, filter domain.ListItemsFilter
 		return nil, pkerror.ErrVaultLocked
 	}
 
+	tagID := ""
+	if strings.TrimSpace(filter.Tag) != "" {
+		tag, err := s.tagRepo.GetByName(ctx, strings.TrimSpace(filter.Tag))
+		if err != nil {
+			if errors.Is(err, pkerror.ErrTagNotFound) {
+				return []domain.Item{}, nil
+			}
+			return nil, err
+		}
+		tagID = tag.ID
+	}
+
 	items, err := s.itemRepo.List(ctx, models.ItemListFilter{
 		Keyword:  filter.Keyword,
-		TagID:    filter.Tag,
+		TagID:    tagID,
 		Favorite: filter.Favorite,
 		Category: filter.Category,
 	})

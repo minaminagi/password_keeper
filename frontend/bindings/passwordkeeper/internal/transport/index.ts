@@ -7,6 +7,7 @@ export {
 };
 
 export {
+    ChangeMasterPasswordRequest,
     CreateItemRequest,
     InitVaultRequest,
     ItemResponse,

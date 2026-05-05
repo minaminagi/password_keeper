@@ -1,4 +1,5 @@
 import {
+    ChangeMasterPassword,
     CreateItem,
     DeleteItem,
     GetItem,
@@ -30,12 +31,24 @@ export type ListItemsFilter = {
     category?: string;
 };
 
+export type ChangeMasterPasswordPayload = {
+    current_master_password?: string;
+    recovery_code?: string;
+    new_master_password: string;
+};
+
 export const api = {
     isVaultInitialized: () => IsVaultInitialized(),
     initVault: (vault_name: string, master_password: string) =>
         InitVault({ vault_name, master_password }),
     unlockVault: (master_password: string) => UnlockVault({ master_password }),
     recoverVault: (recovery_code: string) => RecoverVault({ recovery_code }),
+    changeMasterPassword: (payload: ChangeMasterPasswordPayload) =>
+        ChangeMasterPassword({
+            current_master_password: payload.current_master_password ?? "",
+            recovery_code: payload.recovery_code ?? "",
+            new_master_password: payload.new_master_password,
+        }),
     lockVault: () => LockVault(),
     getVaultMeta: () => GetVaultMeta(),
     listItems: (filter: ListItemsFilter = {}) =>

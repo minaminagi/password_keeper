@@ -9,9 +9,15 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 // @ts-ignore: Unused imports
 import * as $models from "./models.js";
 
+export function ChangeMasterPassword(req: $models.ChangeMasterPasswordRequest): $CancellablePromise<$models.VaultMetaResponse> {
+    return $Call.ByID(3738229239, req).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
 export function CreateItem(req: $models.CreateItemRequest): $CancellablePromise<$models.ItemResponse> {
     return $Call.ByID(3877123207, req).then(($result: any) => {
-        return $$createType0($result);
+        return $$createType1($result);
     });
 }
 
@@ -21,19 +27,19 @@ export function DeleteItem(id: string): $CancellablePromise<void> {
 
 export function GetItem(id: string): $CancellablePromise<$models.ItemResponse> {
     return $Call.ByID(493253095, id).then(($result: any) => {
-        return $$createType0($result);
+        return $$createType1($result);
     });
 }
 
 export function GetVaultMeta(): $CancellablePromise<$models.VaultMetaResponse> {
     return $Call.ByID(2104930121).then(($result: any) => {
-        return $$createType1($result);
+        return $$createType0($result);
     });
 }
 
 export function InitVault(req: $models.InitVaultRequest): $CancellablePromise<$models.VaultMetaResponse> {
     return $Call.ByID(441369266, req).then(($result: any) => {
-        return $$createType1($result);
+        return $$createType0($result);
     });
 }
 
@@ -61,11 +67,11 @@ export function UnlockVault(req: $models.UnlockVaultRequest): $CancellablePromis
 
 export function UpdateItem(req: $models.UpdateItemRequest): $CancellablePromise<$models.ItemResponse> {
     return $Call.ByID(2042180846, req).then(($result: any) => {
-        return $$createType0($result);
+        return $$createType1($result);
     });
 }
 
 // Private type creation functions
-const $$createType0 = $models.ItemResponse.createFrom;
-const $$createType1 = $models.VaultMetaResponse.createFrom;
-const $$createType2 = $Create.Array($$createType0);
+const $$createType0 = $models.VaultMetaResponse.createFrom;
+const $$createType1 = $models.ItemResponse.createFrom;
+const $$createType2 = $Create.Array($$createType1);

@@ -33,6 +33,12 @@ type RecoverVaultRequest struct {
 	RecoveryCode string `json:"recovery_code"`
 }
 
+type ChangeMasterPasswordRequest struct {
+	CurrentMasterPassword string `json:"current_master_password"`
+	RecoveryCode          string `json:"recovery_code"`
+	NewMasterPassword     string `json:"new_master_password"`
+}
+
 type CreateItemRequest struct {
 	Title    string   `json:"title"`
 	Username string   `json:"username"`
@@ -110,6 +116,18 @@ func (h *Handler) RecoverVault(ctx context.Context, req RecoverVaultRequest) err
 	return h.vaultService.Recover(ctx, domain.RecoverVaultInput{
 		RecoveryCode: req.RecoveryCode,
 	})
+}
+
+func (h *Handler) ChangeMasterPassword(ctx context.Context, req ChangeMasterPasswordRequest) (VaultMetaResponse, error) {
+	meta, err := h.vaultService.ChangeMasterPassword(ctx, domain.ChangeMasterPasswordInput{
+		CurrentMasterPassword: req.CurrentMasterPassword,
+		RecoveryCode:          req.RecoveryCode,
+		NewMasterPassword:     req.NewMasterPassword,
+	})
+	if err != nil {
+		return VaultMetaResponse{}, err
+	}
+	return toVaultMetaResponse(meta), nil
 }
 
 func (h *Handler) LockVault(ctx context.Context) error {

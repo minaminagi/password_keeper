@@ -30,3 +30,9 @@ type UnlockVaultInput struct {
 type RecoverVaultInput struct {
 	RecoveryCode string
 }
+
+type ChangeMasterPasswordInput struct {
+	CurrentMasterPassword string
+	RecoveryCode          string
+	NewMasterPassword     string
+}

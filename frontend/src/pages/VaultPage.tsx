@@ -5,6 +5,7 @@ import {
     Button,
     Card,
     Checkbox,
+    Code,
     Divider,
     Group,
     Paper,
@@ -114,6 +115,12 @@ export function VaultPage({ onLocked }: Props) {
     const [revealedPasswordId, setRevealedPasswordId] = useState("");
     const [editingId, setEditingId] = useState("");
     const [activeView, setActiveView] = useState<VaultView>("list");
+    const [passwordPanelOpen, setPasswordPanelOpen] = useState(false);
+    const [currentMasterPassword, setCurrentMasterPassword] = useState("");
+    const [newMasterPassword, setNewMasterPassword] = useState("");
+    const [confirmMasterPassword, setConfirmMasterPassword] = useState("");
+    const [newRecoveryCode, setNewRecoveryCode] = useState("");
+    const [changingMasterPassword, setChangingMasterPassword] = useState(false);
 
     const selectedItem =
         items.find((item) => item.id === selectedId) ?? items[0] ?? null;
@@ -231,6 +238,36 @@ export function VaultPage({ onLocked }: Props) {
         onLocked();
     }
 
+    async function handleChangeMasterPassword(event: React.FormEvent) {
+        event.preventDefault();
+        setChangingMasterPassword(true);
+        setError(null);
+
+        try {
+            if (newMasterPassword !== confirmMasterPassword) {
+                setError({
+                    title: "修改主密码失败",
+                    message: "两次输入的新主密码不一致。",
+                    detail: "new master password confirmation mismatch",
+                });
+                return;
+            }
+
+            const meta = await api.changeMasterPassword({
+                current_master_password: currentMasterPassword,
+                new_master_password: newMasterPassword,
+            });
+            setNewRecoveryCode(meta.recovery_code);
+            setCurrentMasterPassword("");
+            setNewMasterPassword("");
+            setConfirmMasterPassword("");
+        } catch (err) {
+            setError(toAppError(err, "修改主密码失败"));
+        } finally {
+            setChangingMasterPassword(false);
+        }
+    }
+
     return (
         <main className="vault-screen">
             <header className="vault-header">
@@ -247,6 +284,16 @@ export function VaultPage({ onLocked }: Props) {
                 </Group>
 
                 <Group>
+                    <Button
+                        variant="light"
+                        leftSection={<IconKey size={18} />}
+                        onClick={() => {
+                            setPasswordPanelOpen((opened) => !opened);
+                            setNewRecoveryCode("");
+                        }}
+                    >
+                        {passwordPanelOpen ? "收起修改" : "修改主密码"}
+                    </Button>
                     <Button
                         variant="light"
                         leftSection={<IconRefresh size={18} />}
@@ -290,6 +337,104 @@ export function VaultPage({ onLocked }: Props) {
                     <Title order={2}>{tagCount}</Title>
                 </Paper>
             </SimpleGrid>
+
+            {passwordPanelOpen && (
+                <Paper className="password-panel" shadow="md">
+                    <Group justify="space-between" align="flex-start" mb="md">
+                        <div>
+                            <Text c="teal" fw={700} size="sm">
+                                安全设置
+                            </Text>
+                            <Title order={3}>修改主密码</Title>
+                            <Text c="dimmed" size="sm" mt={4}>
+                                修改后会重新加密所有条目，并生成新的恢复码。
+                            </Text>
+                        </div>
+                        <Tooltip label="关闭">
+                            <ActionIcon
+                                variant="light"
+                                color="gray"
+                                onClick={() => {
+                                    setPasswordPanelOpen(false);
+                                    setNewRecoveryCode("");
+                                }}
+                            >
+                                <IconX size={18} />
+                            </ActionIcon>
+                        </Tooltip>
+                    </Group>
+
+                    {newRecoveryCode ? (
+                        <Stack gap="md">
+                            <Text c="dimmed" size="sm">
+                                主密码已修改。新恢复码只显示这一次，旧恢复码已经失效。
+                            </Text>
+                            <Code block className="recovery-code">
+                                {newRecoveryCode}
+                            </Code>
+                            <Button
+                                onClick={() => {
+                                    setPasswordPanelOpen(false);
+                                    setNewRecoveryCode("");
+                                }}
+                            >
+                                我已保存新恢复码
+                            </Button>
+                        </Stack>
+                    ) : (
+                        <form onSubmit={handleChangeMasterPassword}>
+                            <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
+                                <PasswordInput
+                                    label="当前主密码"
+                                    leftSection={<IconKey size={18} />}
+                                    value={currentMasterPassword}
+                                    onChange={(event) =>
+                                        setCurrentMasterPassword(
+                                            event.currentTarget.value,
+                                        )
+                                    }
+                                    required
+                                />
+                                <PasswordInput
+                                    label="新主密码"
+                                    leftSection={<IconKey size={18} />}
+                                    value={newMasterPassword}
+                                    onChange={(event) =>
+                                        setNewMasterPassword(
+                                            event.currentTarget.value,
+                                        )
+                                    }
+                                    required
+                                />
+                                <PasswordInput
+                                    label="确认新主密码"
+                                    leftSection={<IconKey size={18} />}
+                                    value={confirmMasterPassword}
+                                    onChange={(event) =>
+                                        setConfirmMasterPassword(
+                                            event.currentTarget.value,
+                                        )
+                                    }
+                                    required
+                                />
+                            </SimpleGrid>
+                            <Group justify="flex-end" mt="md">
+                                <Button
+                                    type="submit"
+                                    loading={changingMasterPassword}
+                                    disabled={
+                                        !currentMasterPassword ||
+                                        !newMasterPassword ||
+                                        !confirmMasterPassword
+                                    }
+                                >
+                                    修改主密码
+                                </Button>
+                            </Group>
+                        </form>
+                    )}
+                </Paper>
+            )}
 
             {error && (
                 <div className="vault-error">

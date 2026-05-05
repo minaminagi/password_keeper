@@ -81,6 +81,31 @@ func (v *VaultRepositoryImpl) CreateMeta(ctx context.Context, meta models.VaultM
 	return nil
 }
 
+func (v *VaultRepositoryImpl) UpdateMeta(ctx context.Context, meta models.VaultMetaModel) error {
+	if err := v.db.ExecContext(ctx, `
+		UPDATE vault_meta
+		SET
+			vault_name = ?,
+			kdf_algo = ?,
+			kdf_salt = ?,
+			kdf_time_cost = ?,
+			kdf_memory_cost = ?,
+			kdf_parallelism = ?,
+			updated_at = ?
+		WHERE id = 1
+	`, meta.VaultName,
+		meta.KdfAlgo,
+		meta.KdfSalt,
+		meta.KdfTimeCost,
+		meta.KdfMemoryCost,
+		meta.KdfParallelism,
+		meta.UpdatedAt,
+	); err != nil {
+		return fmt.Errorf("update vault meta: %w", err)
+	}
+	return nil
+}
+
 func (v *VaultRepositoryImpl) Meta(ctx context.Context) (models.VaultMetaModel, error) {
 	rows, err := v.db.QueryContext(ctx, `
 		SELECT * FROM vault_meta WHERE id = 1
@@ -145,6 +170,17 @@ func (v *VaultRepositoryImpl) SaveKeyCheck(ctx context.Context, keyCheck models.
 	return nil
 }
 
+func (v *VaultRepositoryImpl) UpdateKeyCheck(ctx context.Context, keyCheck models.VaultKeyCheckModel) error {
+	if err := v.db.ExecContext(ctx, `
+		UPDATE vault_key_check
+		SET nonce = ?, cipher_text = ?, created_at = ?
+		WHERE id = 1
+	`, keyCheck.Nonce, keyCheck.CipherText, keyCheck.CreatedAt); err != nil {
+		return fmt.Errorf("update vault key check: %w", err)
+	}
+	return nil
+}
+
 func (v *VaultRepositoryImpl) KeyCheck(ctx context.Context) (models.VaultKeyCheckModel, error) {
 	rows, err := v.db.QueryContext(ctx, `
 		SELECT * FROM vault_key_check WHERE id = 1
@@ -194,6 +230,33 @@ func (v *VaultRepositoryImpl) SaveRecovery(ctx context.Context, recovery models.
 		recovery.CreatedAt,
 	); err != nil {
 		return fmt.Errorf("insert vault recovery failed: %w", err)
+	}
+	return nil
+}
+
+func (v *VaultRepositoryImpl) UpdateRecovery(ctx context.Context, recovery models.VaultRecoveryModel) error {
+	if err := v.db.ExecContext(ctx, `
+		UPDATE vault_recovery
+		SET
+			kdf_algo = ?,
+			kdf_salt = ?,
+			kdf_time_cost = ?,
+			kdf_memory_cost = ?,
+			kdf_parallelism = ?,
+			nonce = ?,
+			cipher_text = ?,
+			created_at = ?
+		WHERE id = 1
+	`, recovery.KdfAlgo,
+		recovery.KdfSalt,
+		recovery.KdfTimeCost,
+		recovery.KdfMemoryCost,
+		recovery.KdfParallelism,
+		recovery.Nonce,
+		recovery.CipherText,
+		recovery.CreatedAt,
+	); err != nil {
+		return fmt.Errorf("update vault recovery: %w", err)
 	}
 	return nil
 }

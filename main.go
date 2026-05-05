@@ -40,7 +40,7 @@ func main() {
 	encryptor := crypto.NewAESGCMEncryptor()
 	session := service.NewMemoryVaultSession()
 
-	vaultService := service.NewVaultService(vaultRepo, keyDeriver, encryptor, session)
+	vaultService := service.NewVaultService(vaultRepo, itemrepo, keyDeriver, encryptor, session)
 	itemService := service.NewItemService(itemrepo, tagRepo, itemTagRepo, encryptor, session)
 
 	handler := transport.NewHandler(vaultService, itemService)

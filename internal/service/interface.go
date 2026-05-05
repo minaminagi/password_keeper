@@ -19,6 +19,7 @@ type VaultService interface {
 	IsInitialized(ctx context.Context) (bool, error)
 	Unlock(ctx context.Context, input domain.UnlockVaultInput) error
 	Recover(ctx context.Context, input domain.RecoverVaultInput) error
+	ChangeMasterPassword(ctx context.Context, input domain.ChangeMasterPasswordInput) (domain.VaultMeta, error)
 	Lock(ctx context.Context) error
 	GetMeta(ctx context.Context) (domain.VaultMeta, error)
 }

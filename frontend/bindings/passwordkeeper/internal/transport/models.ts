@@ -5,6 +5,35 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
+export class ChangeMasterPasswordRequest {
+    "current_master_password": string;
+    "recovery_code": string;
+    "new_master_password": string;
+
+    /** Creates a new ChangeMasterPasswordRequest instance. */
+    constructor($$source: Partial<ChangeMasterPasswordRequest> = {}) {
+        if (!("current_master_password" in $$source)) {
+            this["current_master_password"] = "";
+        }
+        if (!("recovery_code" in $$source)) {
+            this["recovery_code"] = "";
+        }
+        if (!("new_master_password" in $$source)) {
+            this["new_master_password"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ChangeMasterPasswordRequest instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ChangeMasterPasswordRequest {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ChangeMasterPasswordRequest($$parsedSource as Partial<ChangeMasterPasswordRequest>);
+    }
+}
+
 export class CreateItemRequest {
     "title": string;
     "username": string;

@@ -54,6 +54,8 @@ frontend/.cache/
 # Wails generated package/build artifacts
 build/bin/
 build/linux/appimage/build/
+build/linux/appimage/password_keeper
+build/linux/appimage/password_keeper.png
 build/linux/appimage/*.AppImage
 build/linux/*.desktop
 build/windows/nsis/MicrosoftEdgeWebview2Setup.exe

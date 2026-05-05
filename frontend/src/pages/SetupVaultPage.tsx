@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
     Badge,
     Button,
+    Code,
     Group,
     Paper,
     PasswordInput,
@@ -14,6 +15,7 @@ import {
 import {
     IconDatabasePlus,
     IconFingerprint,
+    IconLifebuoy,
     IconLock,
     IconShieldCheck,
 } from "@tabler/icons-react";
@@ -31,6 +33,7 @@ export function SetupVaultPage({ error, onCreated }: Props) {
     const [masterPassword, setMasterPassword] = useState("");
     const [localError, setLocalError] = useState<AppError | null>(error);
     const [submitting, setSubmitting] = useState(false);
+    const [recoveryCode, setRecoveryCode] = useState("");
 
     async function handleSubmit(event: React.FormEvent) {
         event.preventDefault();
@@ -38,8 +41,8 @@ export function SetupVaultPage({ error, onCreated }: Props) {
         setLocalError(null);
 
         try {
-            await api.initVault(vaultName, masterPassword);
-            onCreated();
+            const meta = await api.initVault(vaultName, masterPassword);
+            setRecoveryCode(meta.recovery_code);
         } catch (err) {
             setLocalError(toAppError(err, "创建保险库失败"));
         } finally {
@@ -79,7 +82,41 @@ export function SetupVaultPage({ error, onCreated }: Props) {
                 </div>
 
                 <Paper className="auth-card" shadow="xl">
-                    <form onSubmit={handleSubmit}>
+                    {recoveryCode ? (
+                        <Stack gap="lg">
+                            <ThemeIcon size={62} radius={22} variant="gradient">
+                                <IconLifebuoy size={34} />
+                            </ThemeIcon>
+                            <div>
+                                <Text c="teal" fw={700} size="sm">
+                                    只显示这一次
+                                </Text>
+                                <Title order={2}>保存恢复码</Title>
+                                <Text c="dimmed" mt={6}>
+                                    如果忘记主密码，只能用这个恢复码解锁保险库。
+                                    关闭此页面后，应用不会再次显示它。
+                                </Text>
+                            </div>
+
+                            <Code block className="recovery-code">
+                                {recoveryCode}
+                            </Code>
+
+                            <Text c="red" size="sm" fw={700}>
+                                请把恢复码保存在安全的位置。丢失主密码和恢复码后，
+                                已加密的数据无法恢复。
+                            </Text>
+
+                            <Button
+                                size="md"
+                                rightSection={<IconShieldCheck size={18} />}
+                                onClick={onCreated}
+                            >
+                                我已保存恢复码，进入保险库
+                            </Button>
+                        </Stack>
+                    ) : (
+                        <form onSubmit={handleSubmit}>
                         <Stack gap="lg">
                             <div>
                                 <Text c="teal" fw={700} size="sm">
@@ -134,7 +171,8 @@ export function SetupVaultPage({ error, onCreated }: Props) {
                                 </Button>
                             </Group>
                         </Stack>
-                    </form>
+                        </form>
+                    )}
                 </Paper>
             </section>
         </main>

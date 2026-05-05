@@ -7,6 +7,7 @@ import {
     IsVaultInitialized,
     ListItems,
     LockVault,
+    RecoverVault,
     UnlockVault,
     UpdateItem,
 } from "../../bindings/passwordkeeper/internal/transport/handler";
@@ -34,6 +35,7 @@ export const api = {
     initVault: (vault_name: string, master_password: string) =>
         InitVault({ vault_name, master_password }),
     unlockVault: (master_password: string) => UnlockVault({ master_password }),
+    recoverVault: (recovery_code: string) => RecoverVault({ recovery_code }),
     lockVault: () => LockVault(),
     getVaultMeta: () => GetVaultMeta(),
     listItems: (filter: ListItemsFilter = {}) =>

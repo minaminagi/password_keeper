@@ -51,6 +51,10 @@ export function LockVault(): $CancellablePromise<void> {
     return $Call.ByID(1761881669);
 }
 
+export function RecoverVault(req: $models.RecoverVaultRequest): $CancellablePromise<void> {
+    return $Call.ByID(2685420012, req);
+}
+
 export function UnlockVault(req: $models.UnlockVaultRequest): $CancellablePromise<void> {
     return $Call.ByID(3100085836, req);
 }

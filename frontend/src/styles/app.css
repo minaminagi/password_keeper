@@ -170,6 +170,26 @@ textarea {
     border-radius: 24px;
 }
 
+.recovery-code {
+    padding: 18px;
+    border-radius: 18px;
+    font-size: 18px;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.copyable-text,
+.recovery-code {
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
+}
+
+.copyable-block {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .vault-screen {
     padding: 28px;
     overflow-x: hidden;
@@ -284,8 +304,16 @@ textarea {
     white-space: nowrap;
 }
 
+.password-mask {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
 .password-plain {
     letter-spacing: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    text-overflow: clip;
 }
 
 .vault-error {

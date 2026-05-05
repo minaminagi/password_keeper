@@ -12,6 +12,8 @@ type VaultRepository interface {
 	VaultMetaExists(ctx context.Context) (bool, error)
 	SaveKeyCheck(ctx context.Context, keyCheck models.VaultKeyCheckModel) error
 	KeyCheck(ctx context.Context) (models.VaultKeyCheckModel, error)
+	SaveRecovery(ctx context.Context, recovery models.VaultRecoveryModel) error
+	Recovery(ctx context.Context) (models.VaultRecoveryModel, error)
 }
 
 type ItemRepository interface {

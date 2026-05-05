@@ -3,26 +3,26 @@
 #
 # The lines below are called `modelines`. See `:help modeline`
 
-name: "password_keeper.exe"
+name: "password_keeper"
 arch: ${GOARCH}
 platform: "linux"
 version: "0.1.0"
 section: "default"
 priority: "extra"
-maintainer: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>
-description: "A password_keeper application"
-vendor: "My Company"
-homepage: "https://wails.io"
+maintainer: "Minaminagi <minaminagi@example.com>"
+description: "An offline encrypted password manager"
+vendor: "Minaminagi"
+homepage: "https://github.com/minaminagi/password_keeper"
 license: "MIT"
 release: "1"
 
 contents:
-  - src: "./bin/password_keeper.exe"
-    dst: "/usr/local/bin/password_keeper.exe"
+  - src: "./bin/password_keeper"
+    dst: "/usr/local/bin/password_keeper"
   - src: "./build/appicon.png"
-    dst: "/usr/share/icons/hicolor/128x128/apps/password_keeper.exe.png"
-  - src: "./build/linux/password_keeper.exe.desktop"
-    dst: "/usr/share/applications/password_keeper.exe.desktop"
+    dst: "/usr/share/icons/hicolor/128x128/apps/password_keeper.png"
+  - src: "./build/linux/password_keeper.desktop"
+    dst: "/usr/share/applications/password_keeper.desktop"
 
 # Default dependencies for Debian 12/Ubuntu 22.04+ with WebKit 4.1
 depends:

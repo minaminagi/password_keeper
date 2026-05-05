@@ -164,6 +164,54 @@ func (v *VaultRepositoryImpl) KeyCheck(ctx context.Context) (models.VaultKeyChec
 	}, nil
 }
 
+func (v *VaultRepositoryImpl) SaveRecovery(ctx context.Context, recovery models.VaultRecoveryModel) error {
+	exists, err := v.vaultRecoveryExists(ctx)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return pkerror.ErrVaultRecoveryAlreadyExists
+	}
+	if err := v.db.ExecContext(ctx, `
+		INSERT INTO vault_recovery (
+			kdf_algo,
+			kdf_salt,
+			kdf_time_cost,
+			kdf_memory_cost,
+			kdf_parallelism,
+			nonce,
+			cipher_text,
+			created_at
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`, recovery.KdfAlgo,
+		recovery.KdfSalt,
+		recovery.KdfTimeCost,
+		recovery.KdfMemoryCost,
+		recovery.KdfParallelism,
+		recovery.Nonce,
+		recovery.CipherText,
+		recovery.CreatedAt,
+	); err != nil {
+		return fmt.Errorf("insert vault recovery failed: %w", err)
+	}
+	return nil
+}
+
+func (v *VaultRepositoryImpl) Recovery(ctx context.Context) (models.VaultRecoveryModel, error) {
+	rows, err := v.db.QueryContext(ctx, `
+		SELECT * FROM vault_recovery WHERE id = 1
+	`)
+	if err != nil {
+		return models.VaultRecoveryModel{}, fmt.Errorf("query vault recovery: %w", err)
+	}
+	if len(rows) == 0 {
+		return models.VaultRecoveryModel{}, pkerror.ErrVaultRecoveryNotFound
+	}
+
+	return mapVaultRecoveryModel(rows[0])
+}
+
 func (v *VaultRepositoryImpl) vaultKeyCheckExists(ctx context.Context) (bool, error) {
 	rows, err := v.db.QueryContext(ctx, `
 		SELECT nonce FROM vault_key_check WHERE id = 1
@@ -172,6 +220,43 @@ func (v *VaultRepositoryImpl) vaultKeyCheckExists(ctx context.Context) (bool, er
 		return false, fmt.Errorf("query vault key check exists: %w", err)
 	}
 	return len(rows) > 0, nil
+}
+
+func (v *VaultRepositoryImpl) vaultRecoveryExists(ctx context.Context) (bool, error) {
+	rows, err := v.db.QueryContext(ctx, `
+		SELECT nonce FROM vault_recovery WHERE id = 1
+	`)
+	if err != nil {
+		return false, fmt.Errorf("query vault recovery exists: %w", err)
+	}
+	return len(rows) > 0, nil
+}
+
+func mapVaultRecoveryModel(row map[string]any) (models.VaultRecoveryModel, error) {
+	kdfTimeCost, err := sqliteInt(row["kdf_time_cost"])
+	if err != nil {
+		return models.VaultRecoveryModel{}, fmt.Errorf("map vault recovery kdf_time_cost: %w", err)
+	}
+	kdfMemoryCost, err := sqliteInt(row["kdf_memory_cost"])
+	if err != nil {
+		return models.VaultRecoveryModel{}, fmt.Errorf("map vault recovery kdf_memory_cost: %w", err)
+	}
+	kdfParallelism, err := sqliteInt(row["kdf_parallelism"])
+	if err != nil {
+		return models.VaultRecoveryModel{}, fmt.Errorf("map vault recovery kdf_parallelism: %w", err)
+	}
+
+	return models.VaultRecoveryModel{
+		ID:             1,
+		KdfAlgo:        row["kdf_algo"].(string),
+		KdfSalt:        row["kdf_salt"].([]byte),
+		KdfTimeCost:    kdfTimeCost,
+		KdfMemoryCost:  kdfMemoryCost,
+		KdfParallelism: kdfParallelism,
+		Nonce:          row["nonce"].([]byte),
+		CipherText:     row["cipher_text"].([]byte),
+		CreatedAt:      row["created_at"].(time.Time),
+	}, nil
 }
 
 func (i *ItemRepositoryImpl) Create(ctx context.Context, item models.ItemModel) error {

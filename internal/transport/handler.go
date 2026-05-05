@@ -29,6 +29,10 @@ type UnlockVaultRequest struct {
 	MasterPassword string `json:"master_password"`
 }
 
+type RecoverVaultRequest struct {
+	RecoveryCode string `json:"recovery_code"`
+}
+
 type CreateItemRequest struct {
 	Title    string   `json:"title"`
 	Username string   `json:"username"`
@@ -60,9 +64,10 @@ type ListItemsRequest struct {
 }
 
 type VaultMetaResponse struct {
-	Name      string `json:"name"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
+	Name         string `json:"name"`
+	RecoveryCode string `json:"recovery_code"`
+	CreatedAt    string `json:"created_at"`
+	UpdatedAt    string `json:"updated_at"`
 }
 
 type ItemResponse struct {
@@ -98,6 +103,12 @@ func (h *Handler) InitVault(ctx context.Context, req InitVaultRequest) (VaultMet
 func (h *Handler) UnlockVault(ctx context.Context, req UnlockVaultRequest) error {
 	return h.vaultService.Unlock(ctx, domain.UnlockVaultInput{
 		MasterPassword: req.MasterPassword,
+	})
+}
+
+func (h *Handler) RecoverVault(ctx context.Context, req RecoverVaultRequest) error {
+	return h.vaultService.Recover(ctx, domain.RecoverVaultInput{
+		RecoveryCode: req.RecoveryCode,
 	})
 }
 
@@ -183,9 +194,10 @@ func (h *Handler) ListItems(ctx context.Context, req ListItemsRequest) ([]ItemRe
 
 func toVaultMetaResponse(meta domain.VaultMeta) VaultMetaResponse {
 	return VaultMetaResponse{
-		Name:      meta.Name,
-		CreatedAt: meta.CreatedAt.Format(time.RFC3339),
-		UpdatedAt: meta.UpdatedAt.Format(time.RFC3339),
+		Name:         meta.Name,
+		RecoveryCode: meta.RecoveryCode,
+		CreatedAt:    meta.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:    meta.UpdatedAt.Format(time.RFC3339),
 	}
 }
 

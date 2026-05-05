@@ -25,6 +25,19 @@ type VaultKeyCheckModel struct {
 	CreatedAt  time.Time
 }
 
+// 保存用恢复码加密后的 master key。恢复码本身不入库。
+type VaultRecoveryModel struct {
+	ID             int64
+	KdfAlgo        string
+	KdfSalt        []byte
+	KdfTimeCost    int
+	KdfMemoryCost  int
+	KdfParallelism int
+	Nonce          []byte
+	CipherText     []byte
+	CreatedAt      time.Time
+}
+
 // 数据库存储模型，敏感字段以密文形式保存
 type ItemModel struct {
 	ID            string

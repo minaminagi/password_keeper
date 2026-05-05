@@ -181,6 +181,27 @@ export class ListItemsRequest {
     }
 }
 
+export class RecoverVaultRequest {
+    "recovery_code": string;
+
+    /** Creates a new RecoverVaultRequest instance. */
+    constructor($$source: Partial<RecoverVaultRequest> = {}) {
+        if (!("recovery_code" in $$source)) {
+            this["recovery_code"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new RecoverVaultRequest instance from a string or object.
+     */
+    static createFrom($$source: any = {}): RecoverVaultRequest {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new RecoverVaultRequest($$parsedSource as Partial<RecoverVaultRequest>);
+    }
+}
+
 export class UnlockVaultRequest {
     "master_password": string;
 
@@ -261,6 +282,7 @@ export class UpdateItemRequest {
 
 export class VaultMetaResponse {
     "name": string;
+    "recovery_code": string;
     "created_at": string;
     "updated_at": string;
 
@@ -268,6 +290,9 @@ export class VaultMetaResponse {
     constructor($$source: Partial<VaultMetaResponse> = {}) {
         if (!("name" in $$source)) {
             this["name"] = "";
+        }
+        if (!("recovery_code" in $$source)) {
+            this["recovery_code"] = "";
         }
         if (!("created_at" in $$source)) {
             this["created_at"] = "";

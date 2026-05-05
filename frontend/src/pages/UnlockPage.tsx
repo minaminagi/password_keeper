@@ -6,13 +6,16 @@ import {
     Paper,
     PasswordInput,
     Progress,
+    SegmentedControl,
     Stack,
     Text,
+    TextInput,
     ThemeIcon,
     Title,
 } from "@mantine/core";
 import {
     IconKey,
+    IconLifebuoy,
     IconLockOpen,
     IconShieldLock,
     IconSparkles,
@@ -28,6 +31,10 @@ type Props = {
 
 export function UnlockPage({ error, onUnlocked }: Props) {
     const [masterPassword, setMasterPassword] = useState("");
+    const [recoveryCode, setRecoveryCode] = useState("");
+    const [unlockMode, setUnlockMode] = useState<"password" | "recovery">(
+        "password",
+    );
     const [localError, setLocalError] = useState<AppError | null>(error);
     const [submitting, setSubmitting] = useState(false);
 
@@ -37,10 +44,21 @@ export function UnlockPage({ error, onUnlocked }: Props) {
         setLocalError(null);
 
         try {
-            await api.unlockVault(masterPassword);
+            if (unlockMode === "recovery") {
+                await api.recoverVault(recoveryCode);
+            } else {
+                await api.unlockVault(masterPassword);
+            }
             onUnlocked();
         } catch (err) {
-            setLocalError(toAppError(err, "解锁保险库失败"));
+            setLocalError(
+                toAppError(
+                    err,
+                    unlockMode === "recovery"
+                        ? "恢复码解锁失败"
+                        : "解锁保险库失败",
+                ),
+            );
         } finally {
             setSubmitting(false);
         }
@@ -85,16 +103,42 @@ export function UnlockPage({ error, onUnlocked }: Props) {
                                 <Title order={2}>解锁保险库</Title>
                             </div>
 
-                            <PasswordInput
-                                label="主密码"
-                                leftSection={<IconKey size={18} />}
-                                value={masterPassword}
-                                onChange={(event) =>
-                                    setMasterPassword(event.currentTarget.value)
+                            <SegmentedControl
+                                value={unlockMode}
+                                onChange={(value) =>
+                                    setUnlockMode(value as "password" | "recovery")
                                 }
-                                placeholder="输入主密码"
-                                size="md"
+                                data={[
+                                    { value: "password", label: "主密码" },
+                                    { value: "recovery", label: "恢复码" },
+                                ]}
                             />
+
+                            {unlockMode === "recovery" ? (
+                                <TextInput
+                                    label="恢复码"
+                                    leftSection={<IconLifebuoy size={18} />}
+                                    value={recoveryCode}
+                                    onChange={(event) =>
+                                        setRecoveryCode(event.currentTarget.value)
+                                    }
+                                    placeholder="输入初始化时保存的恢复码"
+                                    size="md"
+                                />
+                            ) : (
+                                <PasswordInput
+                                    label="主密码"
+                                    leftSection={<IconKey size={18} />}
+                                    value={masterPassword}
+                                    onChange={(event) =>
+                                        setMasterPassword(
+                                            event.currentTarget.value,
+                                        )
+                                    }
+                                    placeholder="输入主密码"
+                                    size="md"
+                                />
+                            )}
 
                             {localError && (
                                 <ErrorNotice
@@ -106,12 +150,18 @@ export function UnlockPage({ error, onUnlocked }: Props) {
                             <Button
                                 type="submit"
                                 loading={submitting}
-                                disabled={!masterPassword}
+                                disabled={
+                                    unlockMode === "recovery"
+                                        ? !recoveryCode
+                                        : !masterPassword
+                                }
                                 size="md"
                                 fullWidth
                                 rightSection={<IconLockOpen size={18} />}
                             >
-                                解锁
+                                {unlockMode === "recovery"
+                                    ? "用恢复码解锁"
+                                    : "解锁"}
                             </Button>
                         </Stack>
                     </form>

@@ -11,6 +11,7 @@ export {
     InitVaultRequest,
     ItemResponse,
     ListItemsRequest,
+    RecoverVaultRequest,
     UnlockVaultRequest,
     UpdateItemRequest,
     VaultMetaResponse

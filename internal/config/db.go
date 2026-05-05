@@ -14,6 +14,9 @@ var tableInitSQL string
 //go:embed migrations/002_index.sql
 var indexInitSQL string
 
+//go:embed migrations/003_recovery.sql
+var recoveryInitSQL string
+
 var db *sqlite.SQLiteService
 
 func initDB(dbSource string) error {
@@ -21,34 +24,27 @@ func initDB(dbSource string) error {
 	if err := db.Open(); err != nil {
 		return err
 	}
-	err := initTables()
-	err = initIndex()
-	return err
-}
-
-func initTables() error {
-	sqls := strings.SplitSeq(tableInitSQL, ";")
-	for sql := range sqls {
-		sql = strings.TrimSpace(sql)
-		if sql == "" {
-			continue
-		}
-		if err := db.Execute(sql); err != nil {
-			return fmt.Errorf("init table failed: %w", err)
-		}
+	if err := execSQLStatements(tableInitSQL); err != nil {
+		return fmt.Errorf("init tables: %w", err)
+	}
+	if err := execSQLStatements(indexInitSQL); err != nil {
+		return fmt.Errorf("init indexes: %w", err)
+	}
+	if err := execSQLStatements(recoveryInitSQL); err != nil {
+		return fmt.Errorf("init recovery tables: %w", err)
 	}
 	return nil
 }
 
-func initIndex() error {
-	sqls := strings.SplitSeq(indexInitSQL, ";")
+func execSQLStatements(sqlText string) error {
+	sqls := strings.SplitSeq(sqlText, ";")
 	for sql := range sqls {
 		sql = strings.TrimSpace(sql)
 		if sql == "" {
 			continue
 		}
 		if err := db.Execute(sql); err != nil {
-			return fmt.Errorf("init table failed: %w", err)
+			return fmt.Errorf("execute sql failed: %w", err)
 		}
 	}
 	return nil

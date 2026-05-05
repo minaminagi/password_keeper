@@ -6,6 +6,8 @@ export type AppError = {
 
 const knownMessages: Array<[RegExp, string]> = [
     [/invalid master password/i, "主密码不正确，请重新输入。"],
+    [/invalid recovery code/i, "恢复码不正确，请检查后重新输入。"],
+    [/vault recovery not found/i, "当前保险库没有可用恢复码。"],
     [/vault is locked/i, "保险库已锁定，请先解锁后再操作。"],
     [/vault meta already exists/i, "保险库已经初始化，不需要重复创建。"],
     [/vault meta not found/i, "还没有创建保险库，请先完成初始化。"],

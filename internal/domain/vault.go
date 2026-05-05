@@ -3,10 +3,11 @@ package domain
 import "time"
 
 type VaultMeta struct {
-	Name      string
-	KDF       KDFParams
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	Name         string
+	RecoveryCode string
+	KDF          KDFParams
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 type KDFParams struct {
@@ -24,4 +25,8 @@ type InitVaultInput struct {
 
 type UnlockVaultInput struct {
 	MasterPassword string
+}
+
+type RecoverVaultInput struct {
+	RecoveryCode string
 }

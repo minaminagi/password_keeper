@@ -7,7 +7,7 @@ vars:
   APP_ID: '{{.APP_ID | default "com.wails.app"}}'
   MIN_SDK: '21'
   TARGET_SDK: '34'
-  NDK_VERSION: 'r26d'
+  NDK_VERSION: '26.3.11579264'
 
 tasks:
   install:deps:
@@ -38,6 +38,8 @@ tasks:
       - task: compile:go:shared
         vars:
           ARCH: '{{.ARCH | default "arm64"}}'
+          COMPILE_BUILD_FLAGS:
+            ref: .BUILD_FLAGS
     vars:
       BUILD_FLAGS: '{{if eq .PRODUCTION "true"}}-tags production,android -trimpath -buildvcs=false -ldflags="-w -s"{{else}}-tags android,debug -buildvcs=false -gcflags=all="-l"{{end}}'
     env:
@@ -47,10 +49,11 @@ tasks:
     summary: Compile Go code to shared library (.so)
     cmds:
       - |
+        export ANDROID_HOME="${ANDROID_HOME:-$HOME/Android/Sdk}"
         NDK_ROOT="${ANDROID_NDK_HOME:-$ANDROID_HOME/ndk/{{.NDK_VERSION}}}"
         if [ ! -d "$NDK_ROOT" ]; then
           echo "Error: Android NDK not found at $NDK_ROOT"
-          echo "Please set ANDROID_NDK_HOME or install NDK {{.NDK_VERSION}} via Android Studio"
+          echo "Please set ANDROID_NDK_HOME or install NDK {{.NDK_VERSION}} via SDK Manager"
           exit 1
         fi
 
@@ -89,10 +92,10 @@ tasks:
         mkdir -p {{.BIN_DIR}}
         mkdir -p build/android/app/src/main/jniLibs/$JNI_DIR
 
-        go build -buildmode=c-shared {{.BUILD_FLAGS}} \
+        go build -buildmode=c-shared {{.COMPILE_BUILD_FLAGS}} \
           -o build/android/app/src/main/jniLibs/$JNI_DIR/libwails.so
     vars:
-      BUILD_FLAGS: '{{if eq .PRODUCTION "true"}}-tags production,android -trimpath -buildvcs=false -ldflags="-w -s"{{else}}-tags android,debug -buildvcs=false -gcflags=all="-l"{{end}}'
+      COMPILE_BUILD_FLAGS: '{{.COMPILE_BUILD_FLAGS | default "-tags production,android -trimpath -buildvcs=false -ldflags=\"-w -s\""}}'
 
   compile:go:all-archs:
     summary: Compile Go code for all Android architectures (fat APK)
@@ -123,6 +126,7 @@ tasks:
     summary: Assembles the APK using Gradle
     cmds:
       - |
+        export ANDROID_HOME="${ANDROID_HOME:-$HOME/Android/Sdk}"
         cd build/android
         ./gradlew assembleDebug
         cp app/build/outputs/apk/debug/app-debug.apk "../../{{.BIN_DIR}}/{{.APP_NAME}}.apk"
@@ -132,6 +136,7 @@ tasks:
     summary: Assembles a release APK using Gradle
     cmds:
       - |
+        export ANDROID_HOME="${ANDROID_HOME:-$HOME/Android/Sdk}"
         cd build/android
         ./gradlew assembleRelease
         cp app/build/outputs/apk/release/app-release-unsigned.apk "../../{{.BIN_DIR}}/{{.APP_NAME}}-release.apk"

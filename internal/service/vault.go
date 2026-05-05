@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
+	"strings"
 	"time"
 
 	"passwordkeeper/internal/crypto"
@@ -19,6 +21,7 @@ type vaultService struct {
 }
 
 const vaultKeyCheckPlainText = "password_keeper:vault_key_check:v1"
+const recoveryCodePrefix = "PKR"
 
 func NewVaultService(
 	vaultRepo repo.VaultRepository,
@@ -68,6 +71,11 @@ func (s *vaultService) Init(ctx context.Context, input domain.InitVaultInput) (d
 	}
 
 	now := time.Now()
+	recoveryCode, recoveryModel, err := s.buildRecoveryModel(masterKey, now)
+	if err != nil {
+		return domain.VaultMeta{}, err
+	}
+
 	metaModel := models.VaultMetaModel{
 		VaultName:      input.VaultName,
 		KdfAlgo:        kdfParams.Algo,
@@ -90,11 +98,15 @@ func (s *vaultService) Init(ctx context.Context, input domain.InitVaultInput) (d
 	}); err != nil {
 		return domain.VaultMeta{}, err
 	}
+	if err := s.vaultRepo.SaveRecovery(ctx, recoveryModel); err != nil {
+		return domain.VaultMeta{}, err
+	}
 
 	s.session.SetMasterKey(masterKey)
 
 	return domain.VaultMeta{
-		Name: input.VaultName,
+		Name:         input.VaultName,
+		RecoveryCode: recoveryCode,
 		KDF: domain.KDFParams{
 			Algo:        kdfParams.Algo,
 			Salt:        kdfParams.Salt,
@@ -144,6 +156,42 @@ func (s *vaultService) Unlock(ctx context.Context, input domain.UnlockVaultInput
 	return nil
 }
 
+func (s *vaultService) Recover(ctx context.Context, input domain.RecoverVaultInput) error {
+	recovery, err := s.vaultRepo.Recovery(ctx)
+	if err != nil {
+		return err
+	}
+
+	recoveryKey, err := s.keyDeriver.DeriveKey(normalizeRecoveryCode(input.RecoveryCode), crypto.KDFParams{
+		Algo:        recovery.KdfAlgo,
+		Salt:        recovery.KdfSalt,
+		TimeCost:    recovery.KdfTimeCost,
+		MemoryCost:  recovery.KdfMemoryCost,
+		Parallelism: recovery.KdfParallelism,
+		Keylength:   crypto.DefaultKeyLen,
+	})
+	if err != nil {
+		return err
+	}
+
+	masterKey, err := s.encryptor.Decrypt(recovery.CipherText, recovery.Nonce, recoveryKey)
+	if err != nil {
+		return pkerror.ErrInvalidRecoveryCode
+	}
+
+	keyCheck, err := s.vaultRepo.KeyCheck(ctx)
+	if err != nil {
+		return err
+	}
+	plainText, err := s.encryptor.Decrypt(keyCheck.CipherText, keyCheck.Nonce, masterKey)
+	if err != nil || string(plainText) != vaultKeyCheckPlainText {
+		return pkerror.ErrInvalidRecoveryCode
+	}
+
+	s.session.SetMasterKey(masterKey)
+	return nil
+}
+
 func (s *vaultService) IsInitialized(ctx context.Context) (bool, error) {
 	return s.vaultRepo.VaultMetaExists(ctx)
 }
@@ -159,4 +207,48 @@ func (s *vaultService) GetMeta(ctx context.Context) (domain.VaultMeta, error) {
 		return domain.VaultMeta{}, err
 	}
 	return toDomainVaultMeta(meta), err
+}
+
+func (s *vaultService) buildRecoveryModel(masterKey []byte, createdAt time.Time) (string, models.VaultRecoveryModel, error) {
+	codeBytes, err := s.keyDeriver.GenerateSalt(18)
+	if err != nil {
+		return "", models.VaultRecoveryModel{}, err
+	}
+	recoveryCode := recoveryCodePrefix + "-" + base64.RawURLEncoding.EncodeToString(codeBytes)
+
+	salt, err := s.keyDeriver.GenerateSalt(16)
+	if err != nil {
+		return "", models.VaultRecoveryModel{}, err
+	}
+	kdfParams := crypto.KDFParams{
+		Algo:        crypto.KDFAlgoArgon2id,
+		Salt:        salt,
+		TimeCost:    3,
+		MemoryCost:  64 * 1024,
+		Parallelism: 4,
+		Keylength:   crypto.DefaultKeyLen,
+	}
+	recoveryKey, err := s.keyDeriver.DeriveKey(normalizeRecoveryCode(recoveryCode), kdfParams)
+	if err != nil {
+		return "", models.VaultRecoveryModel{}, err
+	}
+	encryptedMasterKey, err := s.encryptor.Encrypt(masterKey, recoveryKey)
+	if err != nil {
+		return "", models.VaultRecoveryModel{}, err
+	}
+
+	return recoveryCode, models.VaultRecoveryModel{
+		KdfAlgo:        kdfParams.Algo,
+		KdfSalt:        kdfParams.Salt,
+		KdfTimeCost:    kdfParams.TimeCost,
+		KdfMemoryCost:  kdfParams.MemoryCost,
+		KdfParallelism: kdfParams.Parallelism,
+		Nonce:          encryptedMasterKey.Nonce,
+		CipherText:     encryptedMasterKey.CipherText,
+		CreatedAt:      createdAt,
+	}, nil
+}
+
+func normalizeRecoveryCode(code string) string {
+	return strings.ToUpper(strings.ReplaceAll(strings.TrimSpace(code), " ", ""))
 }

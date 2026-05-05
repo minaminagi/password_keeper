@@ -591,7 +591,12 @@ export function VaultPage({ onLocked }: Props) {
                                     <Badge color="teal" variant="light" mb={8}>
                                         {selectedItem.category || "other"}
                                     </Badge>
-                                    <Title order={2}>{selectedItem.title}</Title>
+                                    <Title
+                                        className="copyable-text"
+                                        order={2}
+                                    >
+                                        {selectedItem.title}
+                                    </Title>
                                     <Text c="dimmed" size="sm">
                                         更新于 {formatDate(selectedItem.updated_at)}
                                     </Text>
@@ -627,7 +632,7 @@ export function VaultPage({ onLocked }: Props) {
                                     <Text size="xs" c="dimmed" tt="uppercase">
                                         用户名
                                     </Text>
-                                    <Text fw={700}>
+                                    <Text className="copyable-text" fw={700}>
                                         {selectedItem.username || "-"}
                                     </Text>
                                 </Paper>
@@ -639,7 +644,7 @@ export function VaultPage({ onLocked }: Props) {
                                         <Text
                                             className={
                                                 passwordVisible
-                                                    ? "password-plain"
+                                                    ? "password-plain copyable-text"
                                                     : "password-mask"
                                             }
                                             fw={700}
@@ -685,7 +690,7 @@ export function VaultPage({ onLocked }: Props) {
                                 <Text size="xs" c="dimmed" tt="uppercase">
                                     网站
                                 </Text>
-                                <Text fw={700}>
+                                <Text className="copyable-text" fw={700}>
                                     {selectedItem.website || "-"}
                                 </Text>
                             </Paper>
@@ -694,7 +699,7 @@ export function VaultPage({ onLocked }: Props) {
                                 <Text size="xs" c="dimmed" tt="uppercase">
                                     备注
                                 </Text>
-                                <Text>
+                                <Text className="copyable-text copyable-block">
                                     {selectedItem.notes || "没有备注内容。"}
                                 </Text>
                             </Paper>
@@ -704,7 +709,11 @@ export function VaultPage({ onLocked }: Props) {
                                     <Badge variant="outline">无标签</Badge>
                                 ) : (
                                     selectedItem.tags.map((tag) => (
-                                        <Badge key={tag} variant="light">
+                                        <Badge
+                                            className="copyable-text"
+                                            key={tag}
+                                            variant="light"
+                                        >
                                             #{tag}
                                         </Badge>
                                     ))

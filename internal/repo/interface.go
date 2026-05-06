@@ -38,6 +38,11 @@ type ItemTagRepository interface {
 	GetTagsIDsByItemID(ctx context.Context, itemID string) ([]string, error)
 }
 
+type BackupRepository interface {
+	Snapshot(ctx context.Context) (models.VaultBackupModel, error)
+	Restore(ctx context.Context, backup models.VaultBackupModel) error
+}
+
 type TxManager interface {
 	WithinTransaction(ctx context.Context, fn func(ctx context.Context) error) error
 }

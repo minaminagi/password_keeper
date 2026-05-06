@@ -26,6 +26,7 @@ import {
     IconBrandChrome,
     IconCategory,
     IconDatabase,
+    IconDownload,
     IconEye,
     IconEyeOff,
     IconKey,
@@ -65,6 +66,7 @@ type Props = {
 };
 
 type VaultView = "form" | "list" | "detail";
+type SecurityPanelMode = "password" | "backup";
 
 const emptyItem: CreateItemPayload = {
     title: "",
@@ -102,7 +104,7 @@ function formatDate(value: string) {
 }
 
 function parseSearch(value: string) {
-    const tagMatch = value.match(/(?:^|\s)#\+(\S+)/);
+    const tagMatch = value.match(/(?:^|\s)#(\S+)/);
     const tag = tagMatch?.[1] ?? "";
     const keyword = tagMatch ? value.replace(tagMatch[0], " ").trim() : value;
     return { keyword, tag };
@@ -122,12 +124,16 @@ export function VaultPage({ onLocked }: Props) {
     const [revealedPasswordId, setRevealedPasswordId] = useState("");
     const [editingId, setEditingId] = useState("");
     const [activeView, setActiveView] = useState<VaultView>("list");
-    const [passwordPanelOpen, setPasswordPanelOpen] = useState(false);
+    const [securityPanelMode, setSecurityPanelMode] =
+        useState<SecurityPanelMode | null>(null);
     const [currentMasterPassword, setCurrentMasterPassword] = useState("");
     const [newMasterPassword, setNewMasterPassword] = useState("");
     const [confirmMasterPassword, setConfirmMasterPassword] = useState("");
     const [newRecoveryCode, setNewRecoveryCode] = useState("");
     const [changingMasterPassword, setChangingMasterPassword] = useState(false);
+    const [exportPassword, setExportPassword] = useState("");
+    const [exportedBackupText, setExportedBackupText] = useState("");
+    const [exportingBackup, setExportingBackup] = useState(false);
 
     const selectedItem =
         items.find((item) => item.id === selectedId) ?? items[0] ?? null;
@@ -198,7 +204,7 @@ export function VaultPage({ onLocked }: Props) {
     }
 
     async function applyTagFilter(tag: string) {
-        const nextKeyword = `#+${tag}`;
+        const nextKeyword = `#${tag}`;
         setKeyword(nextKeyword);
         setActiveView("list");
         await refresh({ keyword: nextKeyword });
@@ -284,6 +290,29 @@ export function VaultPage({ onLocked }: Props) {
         }
     }
 
+    async function handleExportBackup(event: React.FormEvent) {
+        event.preventDefault();
+        setExportingBackup(true);
+        setError(null);
+
+        try {
+            const result = await api.exportBackup(exportPassword);
+            setExportedBackupText(result.cipher_text);
+            setExportPassword("");
+        } catch (err) {
+            setError(toAppError(err, "导出密文备份失败"));
+        } finally {
+            setExportingBackup(false);
+        }
+    }
+
+    function toggleSecurityPanel(mode: SecurityPanelMode) {
+        setSecurityPanelMode((current) => (current === mode ? null : mode));
+        if (mode === "password") {
+            setNewRecoveryCode("");
+        }
+    }
+
     return (
         <main className="vault-screen">
             <header className="vault-header">
@@ -303,12 +332,16 @@ export function VaultPage({ onLocked }: Props) {
                     <Button
                         variant="light"
                         leftSection={<IconKey size={18} />}
-                        onClick={() => {
-                            setPasswordPanelOpen((opened) => !opened);
-                            setNewRecoveryCode("");
-                        }}
+                        onClick={() => toggleSecurityPanel("password")}
                     >
-                        {passwordPanelOpen ? "收起修改" : "修改主密码"}
+                        {securityPanelMode === "password" ? "收起修改" : "修改主密码"}
+                    </Button>
+                    <Button
+                        variant="light"
+                        leftSection={<IconDownload size={18} />}
+                        onClick={() => toggleSecurityPanel("backup")}
+                    >
+                        {securityPanelMode === "backup" ? "收起备份" : "导出备份"}
                     </Button>
                     <Button
                         variant="light"
@@ -354,24 +387,38 @@ export function VaultPage({ onLocked }: Props) {
                 </Paper>
             </SimpleGrid>
 
-            {passwordPanelOpen && (
+            {securityPanelMode && (
                 <Paper className="password-panel" shadow="md">
-                    <Group justify="space-between" align="flex-start" mb="md">
+                    <Group
+                        className="panel-heading"
+                        justify="space-between"
+                        align="flex-start"
+                        mb="md"
+                    >
                         <div>
                             <Text c="teal" fw={700} size="sm">
-                                安全设置
+                                {securityPanelMode === "password"
+                                    ? "安全设置"
+                                    : "加密备份"}
                             </Text>
-                            <Title order={3}>修改主密码</Title>
+                            <Title order={3}>
+                                {securityPanelMode === "password"
+                                    ? "修改主密码"
+                                    : "导出数据库为一段密文"}
+                            </Title>
                             <Text c="dimmed" size="sm" mt={4}>
-                                修改后会重新加密所有条目，并生成新的恢复码。
+                                {securityPanelMode === "password"
+                                    ? "修改后会重新加密所有条目，并生成新的恢复码。"
+                                    : "这段文本包含保险库元数据、条目、标签和恢复信息。导入时需要这里设置的导出密码。"}
                             </Text>
                         </div>
                         <Tooltip label="关闭">
                             <ActionIcon
+                                className="panel-close"
                                 variant="light"
                                 color="gray"
                                 onClick={() => {
-                                    setPasswordPanelOpen(false);
+                                    setSecurityPanelMode(null);
                                     setNewRecoveryCode("");
                                 }}
                             >
@@ -380,7 +427,7 @@ export function VaultPage({ onLocked }: Props) {
                         </Tooltip>
                     </Group>
 
-                    {newRecoveryCode ? (
+                    {securityPanelMode === "password" && newRecoveryCode ? (
                         <Stack gap="md">
                             <Text c="dimmed" size="sm">
                                 主密码已修改。新恢复码只显示这一次，旧恢复码已经失效。
@@ -390,14 +437,14 @@ export function VaultPage({ onLocked }: Props) {
                             </Code>
                             <Button
                                 onClick={() => {
-                                    setPasswordPanelOpen(false);
+                                    setSecurityPanelMode(null);
                                     setNewRecoveryCode("");
                                 }}
                             >
                                 我已保存新恢复码
                             </Button>
                         </Stack>
-                    ) : (
+                    ) : securityPanelMode === "password" ? (
                         <form onSubmit={handleChangeMasterPassword}>
                             <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
                                 <PasswordInput
@@ -447,6 +494,47 @@ export function VaultPage({ onLocked }: Props) {
                                     修改主密码
                                 </Button>
                             </Group>
+                        </form>
+                    ) : (
+                        <form onSubmit={handleExportBackup}>
+                            <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
+                                <PasswordInput
+                                    label="导出密码"
+                                    leftSection={<IconKey size={18} />}
+                                    value={exportPassword}
+                                    onChange={(event) =>
+                                        setExportPassword(event.currentTarget.value)
+                                    }
+                                    placeholder="单独设置一个备份密码"
+                                    required
+                                />
+                                <Button
+                                    type="submit"
+                                    mt={{ base: 0, md: 25 }}
+                                    loading={exportingBackup}
+                                    disabled={!exportPassword}
+                                    leftSection={<IconDownload size={18} />}
+                                >
+                                    生成密文
+                                </Button>
+                            </SimpleGrid>
+
+                            {exportedBackupText && (
+                                <Textarea
+                                    className="backup-output"
+                                    label="密文备份"
+                                    description="直接选中并复制整段文本。保存导出密码，否则无法导入。"
+                                    mt="md"
+                                    minRows={7}
+                                    autosize
+                                    value={exportedBackupText}
+                                    onChange={(event) =>
+                                        setExportedBackupText(
+                                            event.currentTarget.value,
+                                        )
+                                    }
+                                />
+                            )}
                         </form>
                     )}
                 </Paper>
@@ -634,7 +722,7 @@ export function VaultPage({ onLocked }: Props) {
                         </Group>
 
                         <TextInput
-                            placeholder="搜索标题，或输入 #+标签名"
+                            placeholder="搜索标题，或输入 #标签名"
                             leftSection={<IconSearch size={18} />}
                             value={keyword}
                             onChange={(event) =>

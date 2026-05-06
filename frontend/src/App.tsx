@@ -61,7 +61,11 @@ function App() {
 
     if (stage === "setup") {
         return (
-            <SetupVaultPage error={error} onCreated={() => setStage("vault")} />
+            <SetupVaultPage
+                error={error}
+                onCreated={() => setStage("vault")}
+                onImported={() => setStage("unlock")}
+            />
         );
     }
 

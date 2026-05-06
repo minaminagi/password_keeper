@@ -87,6 +87,73 @@ export class CreateItemRequest {
     }
 }
 
+export class ExportBackupRequest {
+    "export_password": string;
+
+    /** Creates a new ExportBackupRequest instance. */
+    constructor($$source: Partial<ExportBackupRequest> = {}) {
+        if (!("export_password" in $$source)) {
+            this["export_password"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ExportBackupRequest instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ExportBackupRequest {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ExportBackupRequest($$parsedSource as Partial<ExportBackupRequest>);
+    }
+}
+
+export class ExportBackupResponse {
+    "cipher_text": string;
+
+    /** Creates a new ExportBackupResponse instance. */
+    constructor($$source: Partial<ExportBackupResponse> = {}) {
+        if (!("cipher_text" in $$source)) {
+            this["cipher_text"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ExportBackupResponse instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ExportBackupResponse {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ExportBackupResponse($$parsedSource as Partial<ExportBackupResponse>);
+    }
+}
+
+export class ImportBackupRequest {
+    "export_password": string;
+    "cipher_text": string;
+
+    /** Creates a new ImportBackupRequest instance. */
+    constructor($$source: Partial<ImportBackupRequest> = {}) {
+        if (!("export_password" in $$source)) {
+            this["export_password"] = "";
+        }
+        if (!("cipher_text" in $$source)) {
+            this["cipher_text"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ImportBackupRequest instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ImportBackupRequest {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ImportBackupRequest($$parsedSource as Partial<ImportBackupRequest>);
+    }
+}
+
 export class InitVaultRequest {
     "vault_name": string;
     "master_password": string;

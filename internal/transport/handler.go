@@ -9,14 +9,16 @@ import (
 )
 
 type Handler struct {
-	vaultService service.VaultService
-	itemService  service.ItemService
+	vaultService  service.VaultService
+	itemService   service.ItemService
+	backupService service.BackupService
 }
 
-func NewHandler(vaultService service.VaultService, itemService service.ItemService) *Handler {
+func NewHandler(vaultService service.VaultService, itemService service.ItemService, backupService service.BackupService) *Handler {
 	return &Handler{
-		vaultService: vaultService,
-		itemService:  itemService,
+		vaultService:  vaultService,
+		itemService:   itemService,
+		backupService: backupService,
 	}
 }
 
@@ -69,6 +71,15 @@ type ListItemsRequest struct {
 	Category string `json:"category"`
 }
 
+type ExportBackupRequest struct {
+	ExportPassword string `json:"export_password"`
+}
+
+type ImportBackupRequest struct {
+	ExportPassword string `json:"export_password"`
+	CipherText     string `json:"cipher_text"`
+}
+
 type VaultMetaResponse struct {
 	Name         string `json:"name"`
 	RecoveryCode string `json:"recovery_code"`
@@ -88,6 +99,10 @@ type ItemResponse struct {
 	Tags      []string `json:"tags"`
 	CreatedAt string   `json:"created_at"`
 	UpdatedAt string   `json:"updated_at"`
+}
+
+type ExportBackupResponse struct {
+	CipherText string `json:"cipher_text"`
 }
 
 func (h *Handler) IsVaultInitialized(ctx context.Context) (bool, error) {
@@ -141,6 +156,23 @@ func (h *Handler) GetVaultMeta(ctx context.Context) (VaultMetaResponse, error) {
 	}
 
 	return toVaultMetaResponse(meta), nil
+}
+
+func (h *Handler) ExportBackup(ctx context.Context, req ExportBackupRequest) (ExportBackupResponse, error) {
+	cipherText, err := h.backupService.Export(ctx, domain.ExportBackupInput{
+		ExportPassword: req.ExportPassword,
+	})
+	if err != nil {
+		return ExportBackupResponse{}, err
+	}
+	return ExportBackupResponse{CipherText: cipherText}, nil
+}
+
+func (h *Handler) ImportBackup(ctx context.Context, req ImportBackupRequest) error {
+	return h.backupService.Import(ctx, domain.ImportBackupInput{
+		ExportPassword: req.ExportPassword,
+		CipherText:     req.CipherText,
+	})
 }
 
 func (h *Handler) CreateItem(ctx context.Context, req CreateItemRequest) (ItemResponse, error) {

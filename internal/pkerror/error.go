@@ -24,6 +24,8 @@ var (
 
 	ErrInvalidMasterPassword = errors.New("invalid master password")
 	ErrInvalidRecoveryCode   = errors.New("invalid recovery code")
+	ErrInvalidBackupFormat   = errors.New("invalid backup format")
+	ErrInvalidBackupPassword = errors.New("invalid backup password")
 
 	ErrVaultLocked = errors.New("vault is locked")
 )

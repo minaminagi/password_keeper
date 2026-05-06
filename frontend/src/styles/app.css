@@ -179,7 +179,8 @@ textarea {
 }
 
 .copyable-text,
-.recovery-code {
+.recovery-code,
+.backup-output textarea {
     user-select: text;
     -webkit-user-select: text;
     cursor: text;
@@ -334,6 +335,7 @@ textarea {
 }
 
 .password-panel {
+    position: relative;
     width: min(1500px, 100%);
     margin: 0 auto 18px;
     padding: 22px;
@@ -341,6 +343,16 @@ textarea {
     border: 1px solid var(--line);
     background: rgba(255, 255, 255, 0.82);
     box-shadow: 0 18px 60px rgba(12, 51, 44, 0.1);
+}
+
+.panel-close {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+}
+
+.panel-heading {
+    padding-right: 48px;
 }
 
 .vault-view-switcher {

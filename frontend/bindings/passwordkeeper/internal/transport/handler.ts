@@ -25,6 +25,12 @@ export function DeleteItem(id: string): $CancellablePromise<void> {
     return $Call.ByID(2459545088, id);
 }
 
+export function ExportBackup(req: $models.ExportBackupRequest): $CancellablePromise<$models.ExportBackupResponse> {
+    return $Call.ByID(2552364428, req).then(($result: any) => {
+        return $$createType2($result);
+    });
+}
+
 export function GetItem(id: string): $CancellablePromise<$models.ItemResponse> {
     return $Call.ByID(493253095, id).then(($result: any) => {
         return $$createType1($result);
@@ -35,6 +41,10 @@ export function GetVaultMeta(): $CancellablePromise<$models.VaultMetaResponse> {
     return $Call.ByID(2104930121).then(($result: any) => {
         return $$createType0($result);
     });
+}
+
+export function ImportBackup(req: $models.ImportBackupRequest): $CancellablePromise<void> {
+    return $Call.ByID(3462162691, req);
 }
 
 export function InitVault(req: $models.InitVaultRequest): $CancellablePromise<$models.VaultMetaResponse> {
@@ -49,7 +59,7 @@ export function IsVaultInitialized(): $CancellablePromise<boolean> {
 
 export function ListItems(req: $models.ListItemsRequest): $CancellablePromise<$models.ItemResponse[]> {
     return $Call.ByID(364795720, req).then(($result: any) => {
-        return $$createType2($result);
+        return $$createType3($result);
     });
 }
 
@@ -74,4 +84,5 @@ export function UpdateItem(req: $models.UpdateItemRequest): $CancellablePromise<
 // Private type creation functions
 const $$createType0 = $models.VaultMetaResponse.createFrom;
 const $$createType1 = $models.ItemResponse.createFrom;
-const $$createType2 = $Create.Array($$createType1);
+const $$createType2 = $models.ExportBackupResponse.createFrom;
+const $$createType3 = $Create.Array($$createType1);

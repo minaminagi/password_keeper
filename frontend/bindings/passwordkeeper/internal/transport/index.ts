@@ -9,6 +9,9 @@ export {
 export {
     ChangeMasterPasswordRequest,
     CreateItemRequest,
+    ExportBackupRequest,
+    ExportBackupResponse,
+    ImportBackupRequest,
     InitVaultRequest,
     ItemResponse,
     ListItemsRequest,

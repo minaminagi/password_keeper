@@ -24,6 +24,11 @@ type VaultService interface {
 	GetMeta(ctx context.Context) (domain.VaultMeta, error)
 }
 
+type BackupService interface {
+	Export(ctx context.Context, input domain.ExportBackupInput) (string, error)
+	Import(ctx context.Context, input domain.ImportBackupInput) error
+}
+
 type VaultSession interface {
 	SetMasterKey(key []byte)
 	GetMasterKey() ([]byte, bool)

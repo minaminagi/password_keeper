@@ -2,8 +2,10 @@ import {
     ChangeMasterPassword,
     CreateItem,
     DeleteItem,
+    ExportBackup,
     GetItem,
     GetVaultMeta,
+    ImportBackup,
     InitVault,
     IsVaultInitialized,
     ListItems,
@@ -49,6 +51,10 @@ export const api = {
             recovery_code: payload.recovery_code ?? "",
             new_master_password: payload.new_master_password,
         }),
+    exportBackup: (export_password: string) =>
+        ExportBackup({ export_password }),
+    importBackup: (cipher_text: string, export_password: string) =>
+        ImportBackup({ cipher_text, export_password }),
     lockVault: () => LockVault(),
     getVaultMeta: () => GetVaultMeta(),
     listItems: (filter: ListItemsFilter = {}) =>

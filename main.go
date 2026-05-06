@@ -35,6 +35,7 @@ func main() {
 	itemrepo := repo.NewItemRepository(db)
 	tagRepo := repo.NewTagRepository(db)
 	itemTagRepo := repo.NewItemTagRepository(db)
+	backupRepo := repo.NewBackupRepository(db)
 
 	keyDeriver := crypto.NewArgon2KeyDeriver()
 	encryptor := crypto.NewAESGCMEncryptor()
@@ -42,8 +43,9 @@ func main() {
 
 	vaultService := service.NewVaultService(vaultRepo, itemrepo, keyDeriver, encryptor, session)
 	itemService := service.NewItemService(itemrepo, tagRepo, itemTagRepo, encryptor, session)
+	backupService := service.NewBackupService(backupRepo, keyDeriver, encryptor, session)
 
-	handler := transport.NewHandler(vaultService, itemService)
+	handler := transport.NewHandler(vaultService, itemService, backupService)
 
 	app := application.New(application.Options{
 		Name:        "Password Keeper",
